@@ -36,6 +36,13 @@ status:
 
 command:
   player_only: "§cThis command can only be used by players"
+  debug:
+    dragon_success: "§aTeleported to Ender Dragon! Set dragon health to 1 HP (of %max_health%). Destroyed %crystal_count% end crystals."
+    dragon_waiting: "§7Teleported to End. Searching for Ender Dragon..."
+    no_permission: "§cYou don't have permission to use this command."
+    no_challenge: "§cYou need to be in a challenge to use this command."
+    no_end_world: "§cCouldn't find the End world for this challenge."
+    no_dragon: "§cCouldn't find the Ender Dragon in the End world."
   usage:
     create: "§cUsage: /challenge create <name>"
     join: "§cUsage: /challenge join <id>"

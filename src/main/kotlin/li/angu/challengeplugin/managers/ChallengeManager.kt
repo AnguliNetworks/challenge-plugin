@@ -170,6 +170,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     }
 
     private fun createHardcoreWorld(worldName: String): World? {
+        // Create overworld
         val creator = WorldCreator(worldName)
         val world = creator.createWorld() ?: return null
 
@@ -179,19 +180,66 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
         world.difficulty = org.bukkit.Difficulty.HARD
 
-        plugin.logger.info("Created new hardcore world: $worldName")
+        // Create nether world
+        val netherName = "${worldName}_nether"
+        val netherCreator = WorldCreator(netherName)
+            .environment(World.Environment.NETHER)
+        val netherWorld = netherCreator.createWorld()
+        if (netherWorld != null) {
+            // Apply the same game rules to nether
+            netherWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
+            netherWorld.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
+            netherWorld.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
+            netherWorld.difficulty = org.bukkit.Difficulty.HARD
+            plugin.logger.info("Created nether world: $netherName")
+        } else {
+            plugin.logger.warning("Failed to create nether world: $netherName")
+        }
+
+        // Create end world
+        val endName = "${worldName}_the_end"
+        val endCreator = WorldCreator(endName)
+            .environment(World.Environment.THE_END)
+        val endWorld = endCreator.createWorld()
+        if (endWorld != null) {
+            // Apply the same game rules to end
+            endWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
+            endWorld.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
+            endWorld.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
+            endWorld.difficulty = org.bukkit.Difficulty.HARD
+            plugin.logger.info("Created end world: $endName")
+        } else {
+            plugin.logger.warning("Failed to create end world: $endName")
+        }
+
+        plugin.logger.info("Created new hardcore world set: $worldName (with nether and end)")
         return world
     }
 
     private fun loadWorld(worldName: String): World? {
         return try {
-            if (Bukkit.getWorld(worldName) == null) {
+            val mainWorld = if (Bukkit.getWorld(worldName) == null) {
                 Bukkit.createWorld(WorldCreator(worldName))
             } else {
                 Bukkit.getWorld(worldName)
             }
+            
+            // Also load the associated nether and end worlds if they exist
+            val netherName = "${worldName}_nether"
+            if (Bukkit.getWorld(netherName) == null) {
+                val netherCreator = WorldCreator(netherName).environment(World.Environment.NETHER)
+                Bukkit.createWorld(netherCreator)
+            }
+            
+            val endName = "${worldName}_the_end"
+            if (Bukkit.getWorld(endName) == null) {
+                val endCreator = WorldCreator(endName).environment(World.Environment.THE_END)
+                Bukkit.createWorld(endCreator)
+            }
+            
+            mainWorld
         } catch (e: Exception) {
-            plugin.logger.warning("Failed to load world $worldName: ${e.message}")
+            plugin.logger.warning("Failed to load world set $worldName: ${e.message}")
             null
         }
     }

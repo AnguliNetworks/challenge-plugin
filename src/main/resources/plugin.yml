@@ -11,3 +11,7 @@ commands:
   lang:
     description: Change your preferred language
     usage: /lang <language>
+  debugdragon:
+    description: Debug command for the Ender Dragon
+    usage: /debugdragon
+    permission: challengeplugin.debug

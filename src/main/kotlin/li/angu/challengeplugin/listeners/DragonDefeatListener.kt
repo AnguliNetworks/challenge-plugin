@@ -29,10 +29,11 @@ class DragonDefeatListener(private val plugin: ChallengePluginPlugin) : Listener
         val world = entity.world
         val worldName = world.name
 
-        // Find the challenge associated with this world
+        // Find the challenge associated with this end world
+        // The end world name format is "challenge_name_the_end"
+        val baseWorldName = worldName.replace("_the_end", "")
         val challenge = plugin.challengeManager.getAllChallenges()
-            // remove _the_end suffix from world name
-            .find { it.worldName == worldName.replace("_the_end", "") } ?: return
+            .find { it.worldName == baseWorldName } ?: return
 
         plugin.challengeManager.completeChallenge(challenge.id)
 

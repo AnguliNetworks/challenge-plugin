@@ -80,4 +80,20 @@ class Challenge(
         player.inventory.clear()
         player.teleport(world.spawnLocation)
     }
+    
+    /**
+     * Gets the Nether world associated with this challenge world
+     */
+    fun getNetherWorld(): World? {
+        val netherName = "${worldName}_nether"
+        return org.bukkit.Bukkit.getWorld(netherName)
+    }
+    
+    /**
+     * Gets the End world associated with this challenge world
+     */
+    fun getEndWorld(): World? {
+        val endName = "${worldName}_the_end"
+        return org.bukkit.Bukkit.getWorld(endName)
+    }
 }

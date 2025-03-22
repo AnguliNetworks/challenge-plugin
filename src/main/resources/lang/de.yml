@@ -36,6 +36,13 @@ status:
 
 command:
   player_only: "§cDieser Befehl kann nur von Spielern verwendet werden"
+  debug:
+    dragon_success: "§aZum Enderdrachen teleportiert! Drachengesundheit auf 1 HP (von %max_health%) gesetzt. %crystal_count% Endkristalle zerstört."
+    dragon_waiting: "§7Zum End teleportiert. Suche nach dem Enderdrachen..."
+    no_permission: "§cDu hast keine Berechtigung, diesen Befehl zu verwenden."
+    no_challenge: "§cDu musst in einer Herausforderung sein, um diesen Befehl zu verwenden."
+    no_end_world: "§cKonnte die End-Welt für diese Herausforderung nicht finden."
+    no_dragon: "§cKonnte den Enderdrachen in der End-Welt nicht finden."
   usage:
     create: "§cVerwendung: /challenge create <name>"
     join: "§cVerwendung: /challenge join <id>"

@@ -3,6 +3,7 @@ package li.angu.challengeplugin
 import org.bukkit.plugin.java.JavaPlugin
 import li.angu.challengeplugin.commands.ChallengeCommand
 import li.angu.challengeplugin.commands.LanguageCommand
+import li.angu.challengeplugin.commands.DebugDragonCommand
 import li.angu.challengeplugin.managers.ChallengeManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.tasks.TimerTask
@@ -24,10 +25,12 @@ open class ChallengePluginPlugin : JavaPlugin() {
         // Register commands
         val challengeCommand = getCommand("challenge")
         val langCommand = getCommand("lang")
+        val debugDragonCommand = getCommand("debugdragon")
         
         // Log command registration status and available commands
         logger.info("Challenge command registration: ${challengeCommand != null}")
         logger.info("Lang command registration: ${langCommand != null}")
+        logger.info("Debug Dragon command registration: ${debugDragonCommand != null}")
         
         // Log all commands registered with this plugin
         getDescription().commands.forEach { (name, _) ->
@@ -47,6 +50,13 @@ open class ChallengePluginPlugin : JavaPlugin() {
             langCommand.setExecutor(langCommandExecutor)
             langCommand.tabCompleter = langCommandExecutor
             logger.info("Lang command executor and tab completer set")
+        }
+        
+        if (debugDragonCommand != null) {
+            val debugDragonCommandExecutor = DebugDragonCommand(this)
+            debugDragonCommand.setExecutor(debugDragonCommandExecutor)
+            debugDragonCommand.tabCompleter = debugDragonCommandExecutor
+            logger.info("Debug Dragon command executor and tab completer set")
         }
 
         // Register listeners
