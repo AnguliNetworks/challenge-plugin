@@ -63,6 +63,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         registerCommand("debugdragon", DebugDragonCommand(this))
         registerCommand("debugcolors", DebugColorsCommand(this))
         registerCommand("debugrespawn", DebugRespawnCommand(this))
+        registerCommand("debugspawn", DebugSpawnCommand(this))
 
         // Register listeners
         server.pluginManager.registerEvents(DragonDefeatListener(this), this)

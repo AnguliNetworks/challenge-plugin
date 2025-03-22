@@ -42,6 +42,10 @@ commands:
     description: Teleport yourself or all players to their spawn points
     usage: /debugrespawn [all]
     permission: challengeplugin.debug
+  debugspawn:
+    description: Teleport to a specific world's spawn point
+    usage: /debugspawn <world_name>
+    permission: challengeplugin.debug
 permissions:
   challengeplugin.debug:
     description: Access to debug commands
