@@ -2,6 +2,7 @@ package li.angu.challengeplugin.managers
 
 import li.angu.challengeplugin.ChallengePluginPlugin
 import li.angu.challengeplugin.models.Challenge
+import li.angu.challengeplugin.models.ChallengeSettings
 import li.angu.challengeplugin.models.ChallengeStatus
 import org.bukkit.Bukkit
 import org.bukkit.World
@@ -31,6 +32,12 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             val config = YamlConfiguration.loadConfiguration(file)
             try {
                 val id = UUID.fromString(file.nameWithoutExtension)
+
+                // Load settings
+                val settings = ChallengeSettings(
+                    naturalRegeneration = config.getBoolean("settings.naturalRegeneration", true)
+                )
+
                 val challenge = Challenge(
                     id = id,
                     name = config.getString("name", "Unknown") ?: "Unknown",
@@ -38,7 +45,8 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                     status = ChallengeStatus.valueOf(config.getString("status", "ACTIVE") ?: "ACTIVE"),
                     players = config.getStringList("players")
                         .map { UUID.fromString(it) }
-                        .toMutableSet()
+                        .toMutableSet(),
+                    settings = settings
                 )
 
                 // Load timestamps if they exist
@@ -98,6 +106,9 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             config.set("totalPausedDuration", challenge.totalPausedDuration.seconds)
             challenge.lastEmptyTimestamp?.let { config.set("lastEmptyTimestamp", it.epochSecond) }
 
+            // Save settings
+            config.set("settings.naturalRegeneration", challenge.settings.naturalRegeneration)
+
             config.save(file)
         }
     }
@@ -106,13 +117,20 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val id = UUID.randomUUID()
         val worldName = "challenge_${id.toString().substring(0, 8)}"
 
-        // Create new world
-        val world = createHardcoreWorld(worldName)
-
         val challenge = Challenge(id, name, worldName)
         activeChallenges[id] = challenge
 
+        // We'll create the world when the challenge is started after
+        // settings have been configured
+
         return challenge
+    }
+
+    fun finalizeChallenge(challenge: Challenge): Boolean {
+        // Create the world with the challenge settings
+        val world = createHardcoreWorld(challenge.worldName, challenge)
+
+        return world != null
     }
 
     fun getChallenge(id: UUID): Challenge? {
@@ -132,13 +150,17 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         return activeChallenges[challengeId]
     }
 
+    fun removeChallenge(challengeId: UUID) {
+        activeChallenges.remove(challengeId)
+    }
+
     /**
      * Map a player to a challenge without resetting inventory or teleporting
      * Used for reconnection logic
      */
     fun addPlayerToChallenge(playerId: UUID, challengeId: UUID) {
         playerChallengeMap[playerId] = challengeId
-        
+
         // This method is called during reconnection, so we need to make sure
         // the player is also present in the challenge's player set
         val challenge = activeChallenges[challengeId]
@@ -146,7 +168,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             // We don't use challenge.addPlayer since that's meant for Player objects
             // But we want to make sure the player UUID is in the challenge's set
             challenge.players.add(playerId)
-            
+
             // If this is the first player, resume the timer if it was paused
             if (challenge.players.size == 1 && challenge.pausedAt != null) {
                 challenge.resumeTimer()
@@ -239,16 +261,20 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         }
     }
 
-    private fun createHardcoreWorld(worldName: String): World? {
+    private fun createHardcoreWorld(worldName: String, challenge: Challenge? = null): World? {
         // Create overworld
         val creator = WorldCreator(worldName)
         val world = creator.createWorld() ?: return null
 
-        // Set hardcore game rules
-        // world.setGameRule(GameRule.NATURAL_REGENERATION, false) // only activate on real real hardcore
+        // Set game rules (we'll apply full settings after challenge setup)
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
         world.difficulty = org.bukkit.Difficulty.HARD
+
+        // If we have a challenge already, apply settings
+        if (challenge != null) {
+            challenge.applySettingsToWorld(world)
+        }
 
         // Create nether world
         val netherName = "${worldName}_nether"
@@ -256,11 +282,16 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             .environment(World.Environment.NETHER)
         val netherWorld = netherCreator.createWorld()
         if (netherWorld != null) {
-            // Apply the same game rules to nether
-            // netherWorld.setGameRule(GameRule.NATURAL_REGENERATION, false) // only activate on real real hardcore
+            // Apply game rules
             netherWorld.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
             netherWorld.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
             netherWorld.difficulty = org.bukkit.Difficulty.HARD
+
+            // Apply challenge settings if available
+            if (challenge != null) {
+                challenge.applySettingsToWorld(netherWorld)
+            }
+
             plugin.logger.info("Created nether world: $netherName")
         } else {
             plugin.logger.warning("Failed to create nether world: $netherName")
@@ -272,11 +303,16 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             .environment(World.Environment.THE_END)
         val endWorld = endCreator.createWorld()
         if (endWorld != null) {
-            // Apply the same game rules to end
-            // endWorld.setGameRule(GameRule.NATURAL_REGENERATION, false) // only activate on real real hardcore
+            // Apply game rules
             endWorld.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
             endWorld.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
             endWorld.difficulty = org.bukkit.Difficulty.HARD
+
+            // Apply challenge settings if available
+            if (challenge != null) {
+                challenge.applySettingsToWorld(endWorld)
+            }
+
             plugin.logger.info("Created end world: $endName")
         } else {
             plugin.logger.warning("Failed to create end world: $endName")

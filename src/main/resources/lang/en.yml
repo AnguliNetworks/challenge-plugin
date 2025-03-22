@@ -29,6 +29,20 @@ challenge:
   completed: "§aCongratulations! The challenge '§f%name%§a' has been completed!"
   duration_display: "§e§l%time%"
   reconnected: "§aWelcome back! Your inventory and location in challenge '§f%name%§a' have been restored."
+  create_cancelled: "§cChallenge creation cancelled."
+  create_failed: "§cFailed to create challenge world."
+  creating:
+    title: "§6§lCreating Challenge"
+    subtitle: "§7Generating world with your settings..."
+  settings:
+    title: "§8Settings: §9§l%name%"
+    start: "§a§lStart Challenge"
+    start_lore: "§7Click to start the challenge with these settings"
+    natural_regeneration: "§6Natural Regeneration"
+    enabled: "§aEnabled"
+    disabled: "§cDisabled"
+    status: "§7Status: §f%status%"
+    click_to_toggle: "§7Click to toggle"
 
 status:
   active: "§aActive"

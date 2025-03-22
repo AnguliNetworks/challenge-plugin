@@ -29,6 +29,20 @@ challenge:
   completed: "§aGlückwunsch! Die Herausforderung '§f%name%§a' wurde abgeschlossen!"
   duration_display: "§e§l%time%"
   reconnected: "§aWillkommen zurück! Dein Inventar und deine Position in der Herausforderung '§f%name%§a' wurden wiederhergestellt."
+  create_cancelled: "§cErstellung der Herausforderung abgebrochen."
+  create_failed: "§cErstellung der Herausforderungswelt fehlgeschlagen."
+  creating:
+    title: "§6§lErstelle Herausforderung"
+    subtitle: "§7Generiere Welt mit deinen Einstellungen..."
+  settings:
+    title: "§8Einstellungen: §9§l%name%"
+    start: "§a§lHerausforderung starten"
+    start_lore: "§7Klicke, um die Herausforderung mit diesen Einstellungen zu starten"
+    natural_regeneration: "§6Natürliche Regeneration"
+    enabled: "§aAktiviert"
+    disabled: "§cDeaktiviert"
+    status: "§7Status: §f%status%"
+    click_to_toggle: "§7Klicke zum Umschalten"
 
 status:
   active: "§aAktiv"

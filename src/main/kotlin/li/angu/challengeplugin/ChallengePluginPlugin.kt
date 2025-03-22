@@ -7,6 +7,7 @@ import li.angu.challengeplugin.commands.DebugDragonCommand
 import li.angu.challengeplugin.commands.DebugColorsCommand
 import li.angu.challengeplugin.managers.ChallengeManager
 import li.angu.challengeplugin.managers.PlayerDataManager
+import li.angu.challengeplugin.managers.ChallengeSettingsManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.listeners.PlayerConnectionListener
 import li.angu.challengeplugin.tasks.TimerTask
@@ -17,6 +18,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var challengeManager: ChallengeManager
     open lateinit var languageManager: LanguageManager
     open lateinit var playerDataManager: PlayerDataManager
+    open lateinit var challengeSettingsManager: ChallengeSettingsManager
 
     override open fun onEnable() {
         // Make sure the data folder exists
@@ -26,6 +28,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         languageManager = LanguageManager(this)
         playerDataManager = PlayerDataManager(this)
         challengeManager = ChallengeManager(this)
+        challengeSettingsManager = ChallengeSettingsManager(this)
 
         // Register commands
         val challengeCommand = getCommand("challenge")
@@ -94,6 +97,9 @@ open class ChallengePluginPlugin : JavaPlugin() {
                 playerDataManager.savePlayerData(player, challenge.id)
             }
         }
+        
+        // Cleanup the settings manager
+        challengeSettingsManager.cleanup()
 
         logger.info(languageManager.getMessage("plugin.disabled"))
     }

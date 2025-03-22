@@ -65,13 +65,19 @@ tasks.jar {
     }
 }
 
-// Task to copy JAR to test server
-tasks.register<Copy>("deployToTestServer") {
+// Task to copy JAR to test server with a consistent dev filename
+tasks.register("deployToTestServer") {
+    // Depend on build to ensure everything is compiled and tested
     dependsOn("build")
-    from(tasks.jar.get().archiveFile)
-    into("${projectDir}/run/plugins")
+    
     doLast {
-        println("Deployed plugin to test server at: ${projectDir}/run/plugins")
+        // Create a copy task with a fixed filename
+        copy {
+            from(tasks.jar.get().archiveFile)
+            into("${projectDir}/run/plugins")
+            rename { fileName -> "${project.name}-dev.jar" }
+        }
+        println("Deployed plugin to test server at: ${projectDir}/run/plugins/${project.name}-dev.jar")
     }
 }
 

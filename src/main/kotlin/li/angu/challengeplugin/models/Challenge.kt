@@ -6,6 +6,7 @@ import java.util.UUID
 import java.time.Instant
 import java.time.Duration
 import org.bukkit.GameMode
+import org.bukkit.GameRule
 import li.angu.challengeplugin.utils.TimeFormatter
 
 enum class ChallengeStatus {
@@ -13,6 +14,10 @@ enum class ChallengeStatus {
     COMPLETED,
     FAILED
 }
+
+data class ChallengeSettings(
+    var naturalRegeneration: Boolean = true
+)
 
 class Challenge(
     val id: UUID = UUID.randomUUID(),
@@ -25,7 +30,8 @@ class Challenge(
     var startedAt: Instant? = null,
     var pausedAt: Instant? = null,
     var totalPausedDuration: Duration = Duration.ZERO,
-    var lastEmptyTimestamp: Instant? = null
+    var lastEmptyTimestamp: Instant? = null,
+    val settings: ChallengeSettings = ChallengeSettings()
 ) {
     
     fun addPlayer(player: Player): Boolean {
@@ -144,6 +150,13 @@ class Challenge(
         player.level = 0
         player.inventory.clear()
         player.teleport(world.spawnLocation)
+    }
+    
+    fun applySettingsToWorld(world: World) {
+        world.setGameRule(GameRule.NATURAL_REGENERATION, settings.naturalRegeneration)
+        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
+        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
+        world.difficulty = org.bukkit.Difficulty.HARD
     }
     
     /**

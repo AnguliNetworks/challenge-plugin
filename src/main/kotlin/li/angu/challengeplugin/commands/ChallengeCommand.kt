@@ -45,8 +45,8 @@ class ChallengeCommand(private val plugin: ChallengePluginPlugin) : CommandExecu
         val name = args.copyOfRange(1, args.size).joinToString(" ")
         val challenge = plugin.challengeManager.createChallenge(name)
         
-        player.sendMessage(plugin.languageManager.getMessage("challenge.created", player, "name" to name))
-        player.sendMessage(plugin.languageManager.getMessage("challenge.join_command", player, "id" to challenge.id.toString()))
+        // Open settings GUI
+        plugin.challengeSettingsManager.openSettingsInventory(player, challenge)
     }
 
     private fun handleList(player: Player) {
