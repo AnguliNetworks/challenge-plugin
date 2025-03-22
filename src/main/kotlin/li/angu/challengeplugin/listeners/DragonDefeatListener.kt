@@ -17,7 +17,7 @@ class DragonDefeatListener(private val plugin: ChallengePluginPlugin) : Listener
 
     private val deathLocations = HashMap<UUID, Location>()
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onEnderDragonDeath(event: EntityDeathEvent) {
         val entity = event.entity
 
@@ -31,7 +31,8 @@ class DragonDefeatListener(private val plugin: ChallengePluginPlugin) : Listener
 
         // Find the challenge associated with this world
         val challenge = plugin.challengeManager.getAllChallenges()
-            .find { it.worldName == worldName } ?: return
+            // remove _the_end suffix from world name
+            .find { it.worldName == worldName.replace("_the_end", "") } ?: return
 
         plugin.challengeManager.completeChallenge(challenge.id)
 
