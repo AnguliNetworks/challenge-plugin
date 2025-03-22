@@ -12,6 +12,8 @@ import org.bukkit.inventory.ItemStack
 import java.util.Random
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import org.bukkit.configuration.file.YamlConfiguration
+import java.io.File
 
 class BlockDropListener(private val plugin: ChallengePluginPlugin) : Listener {
 
@@ -19,6 +21,12 @@ class BlockDropListener(private val plugin: ChallengePluginPlugin) : Listener {
     // ChallengeID -> (Block Material -> Random Material)
     private val randomDropsMap = ConcurrentHashMap<UUID, ConcurrentHashMap<Material, Material>>()
     private val random = Random()
+    private val dataFolder = File(plugin.dataFolder, "randomizer")
+    
+    init {
+        dataFolder.mkdirs()
+        loadRandomizerMappings()
+    }
 
     /**
      * Get a cached random material for the given challenge and block material
@@ -135,6 +143,63 @@ class BlockDropListener(private val plugin: ChallengePluginPlugin) : Listener {
 
                 // Drop the randomized item
                 block.world.dropItemNaturally(block.location, randomItem)
+            }
+        }
+    }
+    
+    /**
+     * Loads randomizer mappings from disk for all saved challenges
+     */
+    private fun loadRandomizerMappings() {
+        dataFolder.listFiles()?.filter { it.isFile && it.extension == "yml" }?.forEach { file ->
+            try {
+                val config = YamlConfiguration.loadConfiguration(file)
+                val challengeId = UUID.fromString(file.nameWithoutExtension)
+                val challengeMap = ConcurrentHashMap<Material, Material>()
+                
+                // Load all material mappings
+                if (config.contains("mappings")) {
+                    val mappingsSection = config.getConfigurationSection("mappings")
+                    mappingsSection?.getKeys(false)?.forEach { key ->
+                        try {
+                            val sourceMaterial = Material.valueOf(key)
+                            val targetMaterial = Material.valueOf(mappingsSection.getString(key)!!)
+                            challengeMap[sourceMaterial] = targetMaterial
+                        } catch (e: Exception) {
+                            plugin.logger.warning("Failed to load randomizer mapping: $key - ${e.message}")
+                        }
+                    }
+                }
+                
+                // Add to our in-memory map
+                if (challengeMap.isNotEmpty()) {
+                    randomDropsMap[challengeId] = challengeMap
+                    plugin.logger.info("Loaded ${challengeMap.size} randomizer mappings for challenge $challengeId")
+                }
+            } catch (e: Exception) {
+                plugin.logger.warning("Failed to load randomizer mappings from ${file.name}: ${e.message}")
+            }
+        }
+    }
+    
+    /**
+     * Saves all randomizer mappings to disk
+     */
+    fun saveRandomizerMappings() {
+        randomDropsMap.forEach { (challengeId, challengeMap) ->
+            try {
+                val file = File(dataFolder, "$challengeId.yml")
+                val config = YamlConfiguration()
+                
+                // Save all material mappings
+                challengeMap.forEach { (source, target) ->
+                    config.set("mappings.${source.name}", target.name)
+                }
+                
+                config.save(file)
+                plugin.logger.info("Saved ${challengeMap.size} randomizer mappings for challenge $challengeId")
+            } catch (e: Exception) {
+                plugin.logger.warning("Failed to save randomizer mappings for challenge $challengeId: ${e.message}")
             }
         }
     }

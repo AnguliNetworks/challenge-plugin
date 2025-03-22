@@ -20,6 +20,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var playerDataManager: PlayerDataManager
     open lateinit var challengeSettingsManager: ChallengeSettingsManager
     open lateinit var challengeMenuManager: ChallengeMenuManager
+    open lateinit var blockDropListener: BlockDropListener
 
     /**
      * Helper method to register a command with its executor and tab completer
@@ -65,7 +66,8 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(DragonDefeatListener(this), this)
         server.pluginManager.registerEvents(PlayerConnectionListener(this), this)
         server.pluginManager.registerEvents(PlayerHealthListener(this), this)
-        server.pluginManager.registerEvents(BlockDropListener(this), this)
+        blockDropListener = BlockDropListener(this)
+        server.pluginManager.registerEvents(blockDropListener, this)
 
         // Start timer task for challenge duration display
         TimerTask.startTimer(this)
@@ -76,6 +78,9 @@ open class ChallengePluginPlugin : JavaPlugin() {
     override open fun onDisable() {
         // Save any active challenges
         challengeManager.saveActiveChallenges()
+        
+        // Save randomizer mappings
+        blockDropListener.saveRandomizerMappings()
 
         // Save player data for all online players that are in challenges
         server.onlinePlayers.forEach { player ->
