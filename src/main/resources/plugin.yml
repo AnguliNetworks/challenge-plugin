@@ -38,6 +38,10 @@ commands:
     description: Display all Minecraft chat colors and formats
     usage: /debugcolors
     permission: challengeplugin.debug
+  debugrespawn:
+    description: Teleport yourself or all players to their spawn points
+    usage: /debugrespawn [all]
+    permission: challengeplugin.debug
 permissions:
   challengeplugin.debug:
     description: Access to debug commands
