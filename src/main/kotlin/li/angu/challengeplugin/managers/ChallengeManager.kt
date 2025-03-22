@@ -365,6 +365,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         // Create overworld
         val creator = WorldCreator(worldName)
         val world = creator.createWorld() ?: return null
+        val worldSeed = world.seed
 
         // Set game rules (we'll apply full settings after challenge setup)
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
@@ -380,6 +381,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val netherName = "${worldName}_nether"
         val netherCreator = WorldCreator(netherName)
             .environment(World.Environment.NETHER)
+            .seed(worldSeed) // Use the same seed as main world
         val netherWorld = netherCreator.createWorld()
         if (netherWorld != null) {
             // Apply game rules
@@ -392,7 +394,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                 challenge.applySettingsToWorld(netherWorld)
             }
 
-            plugin.logger.info("Created nether world: $netherName")
+            plugin.logger.info("Created nether world: $netherName with seed $worldSeed")
         } else {
             plugin.logger.warning("Failed to create nether world: $netherName")
         }
@@ -401,6 +403,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val endName = "${worldName}_the_end"
         val endCreator = WorldCreator(endName)
             .environment(World.Environment.THE_END)
+            .seed(worldSeed) // Use the same seed as main world
         val endWorld = endCreator.createWorld()
         if (endWorld != null) {
             // Apply game rules
@@ -413,7 +416,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                 challenge.applySettingsToWorld(endWorld)
             }
 
-            plugin.logger.info("Created end world: $endName")
+            plugin.logger.info("Created end world: $endName with seed $worldSeed")
         } else {
             plugin.logger.warning("Failed to create end world: $endName")
         }
@@ -433,13 +436,17 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             // Also load the associated nether and end worlds if they exist
             val netherName = "${worldName}_nether"
             if (Bukkit.getWorld(netherName) == null) {
-                val netherCreator = WorldCreator(netherName).environment(World.Environment.NETHER)
+                val netherCreator = WorldCreator(netherName)
+                    .environment(World.Environment.NETHER)
+                    .seed(mainWorld?.seed ?: 0) // Use the same seed as main world
                 Bukkit.createWorld(netherCreator)
             }
 
             val endName = "${worldName}_the_end"
             if (Bukkit.getWorld(endName) == null) {
-                val endCreator = WorldCreator(endName).environment(World.Environment.THE_END)
+                val endCreator = WorldCreator(endName)
+                    .environment(World.Environment.THE_END)
+                    .seed(mainWorld?.seed ?: 0) // Use the same seed as main world
                 Bukkit.createWorld(endCreator)
             }
 
