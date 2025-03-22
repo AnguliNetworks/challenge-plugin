@@ -4,6 +4,7 @@ import org.bukkit.World
 import org.bukkit.entity.Player
 import java.util.UUID
 import java.time.Instant
+import java.time.Duration
 import org.bukkit.GameMode
 import li.angu.challengeplugin.utils.TimeFormatter
 
@@ -21,7 +22,10 @@ class Challenge(
     var status: ChallengeStatus = ChallengeStatus.ACTIVE,
     val players: MutableSet<UUID> = mutableSetOf(),
     var completedAt: Instant? = null,
-    var startedAt: Instant? = null
+    var startedAt: Instant? = null,
+    var pausedAt: Instant? = null,
+    var totalPausedDuration: Duration = Duration.ZERO,
+    var lastEmptyTimestamp: Instant? = null
 ) {
     
     fun addPlayer(player: Player): Boolean {
@@ -31,16 +35,35 @@ class Challenge(
         
         val added = players.add(player.uniqueId)
         
-        // If this is the first player, set startedAt
-        if (added && startedAt == null && players.size == 1) {
-            startedAt = Instant.now()
+        // Check if this is the first player (after a pause)
+        if (added && players.size == 1) {
+            // If the challenge was started but paused, resume the timer
+            if (startedAt != null && pausedAt != null) {
+                resumeTimer()
+            } 
+            // If this is the first player ever, set startedAt
+            else if (startedAt == null) {
+                startedAt = Instant.now()
+            }
+            
+            // Reset the lastEmptyTimestamp since we have players now
+            lastEmptyTimestamp = null
         }
         
         return added
     }
     
     fun removePlayer(player: Player): Boolean {
-        return players.remove(player.uniqueId)
+        val removed = players.remove(player.uniqueId)
+        
+        // If there are no players left in the challenge, pause the timer
+        if (removed && players.isEmpty()) {
+            pauseTimer()
+            // Set the timestamp when the challenge became empty
+            lastEmptyTimestamp = Instant.now()
+        }
+        
+        return removed
     }
     
     fun isPlayerInChallenge(player: Player): Boolean {
@@ -57,18 +80,60 @@ class Challenge(
         completedAt = Instant.now()
     }
     
+    fun pauseTimer() {
+        if (pausedAt == null && startedAt != null) {
+            pausedAt = Instant.now()
+        }
+    }
+    
+    fun resumeTimer() {
+        val paused = pausedAt
+        if (paused != null) {
+            // Calculate the duration the timer was paused
+            val pauseDuration = Duration.between(paused, Instant.now())
+            // Add to total paused duration
+            totalPausedDuration = totalPausedDuration.plus(pauseDuration)
+            // Reset the pause timestamp
+            pausedAt = null
+        }
+    }
+    
+    fun getEffectiveDuration(): Duration {
+        if (startedAt == null) {
+            return Duration.ZERO
+        }
+        
+        val end = if (status != ChallengeStatus.ACTIVE && completedAt != null) {
+            completedAt
+        } else if (pausedAt != null) {
+            pausedAt
+        } else {
+            Instant.now()
+        }
+        
+        // Calculate raw duration from start to end
+        val rawDuration = Duration.between(startedAt, end)
+        
+        // Subtract total time paused to get effective duration
+        return rawDuration.minus(totalPausedDuration)
+    }
+    
     fun getFormattedDuration(): String {
         if (startedAt == null) {
             return "Not started"
         }
         
-        // If challenge is completed or failed, show the fixed duration
-        if (status != ChallengeStatus.ACTIVE && completedAt != null) {
-            return TimeFormatter.formatDuration(startedAt!!, completedAt)
-        }
+        // Calculate the effective duration (accounting for pauses)
+        val effectiveDuration = getEffectiveDuration()
         
-        // Otherwise show the current running duration
-        return TimeFormatter.formatDuration(startedAt!!)
+        return TimeFormatter.formatDuration(effectiveDuration)
+    }
+    
+    fun isReadyForUnload(): Boolean {
+        // If the challenge is empty and has been empty for at least 5 minutes
+        return players.isEmpty() && 
+               lastEmptyTimestamp != null && 
+               Duration.between(lastEmptyTimestamp, Instant.now()).toMinutes() >= 5
     }
     
     fun setupPlayerForChallenge(player: Player, world: World) {

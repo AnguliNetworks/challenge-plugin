@@ -12,6 +12,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
+import java.time.Duration
 import java.time.Instant
 
 class ChallengeManager(private val plugin: ChallengePluginPlugin) {
@@ -49,6 +50,19 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                     challenge.completedAt = Instant.ofEpochSecond(config.getLong("completedAt"))
                 }
 
+                // Load pause data if it exists
+                if (config.contains("pausedAt")) {
+                    challenge.pausedAt = Instant.ofEpochSecond(config.getLong("pausedAt"))
+                }
+
+                if (config.contains("totalPausedDuration")) {
+                    challenge.totalPausedDuration = Duration.ofSeconds(config.getLong("totalPausedDuration"))
+                }
+
+                if (config.contains("lastEmptyTimestamp")) {
+                    challenge.lastEmptyTimestamp = Instant.ofEpochSecond(config.getLong("lastEmptyTimestamp"))
+                }
+
                 activeChallenges[id] = challenge
 
                 // Update player map
@@ -56,8 +70,10 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                     playerChallengeMap[playerId] = id
                 }
 
-                // Load world if not loaded
-                loadWorld(challenge.worldName)
+                // Only load world if challenge has players or is recently empty
+                if (challenge.players.isNotEmpty() || !challenge.isReadyForUnload()) {
+                    loadWorld(challenge.worldName)
+                }
             } catch (e: Exception) {
                 plugin.logger.warning("Failed to load challenge from file ${file.name}: ${e.message}")
             }
@@ -76,6 +92,11 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             config.set("createdAt", challenge.createdAt.epochSecond)
             challenge.startedAt?.let { config.set("startedAt", it.epochSecond) }
             challenge.completedAt?.let { config.set("completedAt", it.epochSecond) }
+
+            // Save pause data
+            challenge.pausedAt?.let { config.set("pausedAt", it.epochSecond) }
+            config.set("totalPausedDuration", challenge.totalPausedDuration.seconds)
+            challenge.lastEmptyTimestamp?.let { config.set("lastEmptyTimestamp", it.epochSecond) }
 
             config.save(file)
         }
@@ -117,6 +138,21 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
      */
     fun addPlayerToChallenge(playerId: UUID, challengeId: UUID) {
         playerChallengeMap[playerId] = challengeId
+        
+        // This method is called during reconnection, so we need to make sure
+        // the player is also present in the challenge's player set
+        val challenge = activeChallenges[challengeId]
+        if (challenge != null) {
+            // We don't use challenge.addPlayer since that's meant for Player objects
+            // But we want to make sure the player UUID is in the challenge's set
+            challenge.players.add(playerId)
+            
+            // If this is the first player, resume the timer if it was paused
+            if (challenge.players.size == 1 && challenge.pausedAt != null) {
+                challenge.resumeTimer()
+                challenge.lastEmptyTimestamp = null
+            }
+        }
     }
 
     fun joinChallenge(player: Player, challenge: Challenge): Boolean {

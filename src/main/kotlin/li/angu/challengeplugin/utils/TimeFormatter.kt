@@ -12,6 +12,10 @@ object TimeFormatter {
             Duration.between(start, Instant.now())
         }
         
+        return formatDuration(duration)
+    }
+    
+    fun formatDuration(duration: Duration): String {
         val days = duration.toDays()
         val hours = duration.toHours() % 24
         val minutes = duration.toMinutes() % 60
