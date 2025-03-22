@@ -10,6 +10,8 @@ import org.bukkit.entity.Player
 class LanguageCommand(private val plugin: ChallengePluginPlugin) : CommandExecutor, TabCompleter {
     
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        plugin.logger.info("LanguageCommand executed by ${sender.name} with label: $label and args: ${args.joinToString()}")
+        
         if (sender !is Player) {
             sender.sendMessage(plugin.languageManager.getMessage("command.player_only"))
             return true

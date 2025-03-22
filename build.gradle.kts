@@ -15,6 +15,7 @@ repositories {
 }
 
 dependencies {
+    implementation(kotlin("stdlib"))
     compileOnly("org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT")
     testImplementation(kotlin("test"))
     testImplementation("org.mockito:mockito-core:5.10.0")
@@ -35,7 +36,35 @@ tasks.processResources {
         expand(
             "name" to project.name,
             "version" to project.version,
-            "main" to "${project.group}.${project.name.toLowerCase()}.${project.name}Plugin"
+            "main" to "li.angu.challengeplugin.ChallengePluginPlugin"
         )
+    }
+}
+
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+}
+
+// Task to copy JAR to test server
+tasks.register<Copy>("deployToTestServer") {
+    dependsOn("build")
+    from(tasks.jar.get().archiveFile)
+    into("${projectDir}/run/plugins")
+    doLast {
+        println("Deployed plugin to test server at: ${projectDir}/run/plugins")
+    }
+}
+
+// Add debug configuration
+kotlin {
+    target {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "21"
+                freeCompilerArgs = listOf("-Xjvm-default=all")
+            }
+        }
     }
 }

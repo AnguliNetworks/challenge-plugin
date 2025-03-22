@@ -11,16 +11,17 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.Location
 import java.util.UUID
 import org.bukkit.GameMode
+import org.bukkit.event.entity.EnderDragonChangePhaseEvent
 
 class DragonDefeatListener(private val plugin: ChallengePluginPlugin) : Listener {
 
     private val deathLocations = HashMap<UUID, Location>()
 
     @EventHandler
-    fun onEntityDeath(event: EntityDeathEvent) {
+    fun onEnderDragonDeath(event: EntityDeathEvent) {
         val entity = event.entity
 
-        // Early return if not an EnderDragon
+        // check if the entity is an EnderDragon
         if (entity !is EnderDragon) {
             return
         }
