@@ -70,6 +70,15 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
             player
         )
         inventory.setItem(11, syncHeartsItem)
+        
+        // Add Block Randomizer toggle
+        val blockRandomizerItem = createToggleItem(
+            if (challenge.settings.blockRandomizer) Material.COMMAND_BLOCK else Material.FURNACE,
+            "block_randomizer",
+            challenge.settings.blockRandomizer,
+            player
+        )
+        inventory.setItem(12, blockRandomizerItem)
 
         // Add Start Challenge button
         val startItem = ItemStack(Material.DIAMOND_SWORD)
@@ -150,6 +159,22 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
                     player
                 )
                 event.inventory.setItem(11, newItem)
+
+                player.playSound(player.location, "minecraft:ui.button.click", 1.0f, 1.0f)
+            }
+            
+            // Block Randomizer toggle
+            12 -> {
+                challenge.settings.blockRandomizer = !challenge.settings.blockRandomizer
+
+                // Update item to reflect new setting
+                val newItem = createToggleItem(
+                    if (challenge.settings.blockRandomizer) Material.COMMAND_BLOCK else Material.FURNACE,
+                    "block_randomizer",
+                    challenge.settings.blockRandomizer,
+                    player
+                )
+                event.inventory.setItem(12, newItem)
 
                 player.playSound(player.location, "minecraft:ui.button.click", 1.0f, 1.0f)
             }

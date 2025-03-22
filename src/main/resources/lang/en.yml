@@ -50,6 +50,7 @@ challenge:
     start_lore: "§7Click to start the challenge with these settings"
     natural_regeneration: "§6Natural Regeneration"
     sync_hearts: "§cSync Hearts"
+    block_randomizer: "§dBlock Randomizer"
     enabled: "§aEnabled"
     disabled: "§cDisabled"
     status: "§7Status: §f%status%"

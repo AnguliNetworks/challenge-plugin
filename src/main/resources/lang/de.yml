@@ -50,6 +50,7 @@ challenge:
     start_lore: "§7Klicke, um die Herausforderung mit diesen Einstellungen zu starten"
     natural_regeneration: "§6Natürliche Regeneration"
     sync_hearts: "§cSynchronisierte Herzen"
+    block_randomizer: "§dBlock Randomizer"
     enabled: "§aAktiviert"
     disabled: "§cDeaktiviert"
     status: "§7Status: §f%status%"
