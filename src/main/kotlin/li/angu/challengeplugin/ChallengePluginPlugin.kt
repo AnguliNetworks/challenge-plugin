@@ -10,6 +10,7 @@ import li.angu.challengeplugin.managers.PlayerDataManager
 import li.angu.challengeplugin.managers.ChallengeSettingsManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.listeners.PlayerConnectionListener
+import li.angu.challengeplugin.listeners.PlayerHealthListener
 import li.angu.challengeplugin.tasks.TimerTask
 import li.angu.challengeplugin.utils.LanguageManager
 
@@ -79,6 +80,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         // Register listeners
         server.pluginManager.registerEvents(DragonDefeatListener(this), this)
         server.pluginManager.registerEvents(PlayerConnectionListener(this), this)
+        server.pluginManager.registerEvents(PlayerHealthListener(this), this)
 
         // Start timer task for challenge duration display
         TimerTask.startTimer(this)

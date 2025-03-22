@@ -39,6 +39,7 @@ challenge:
     start: "§a§lHerausforderung starten"
     start_lore: "§7Klicke, um die Herausforderung mit diesen Einstellungen zu starten"
     natural_regeneration: "§6Natürliche Regeneration"
+    sync_hearts: "§cSynchronisierte Herzen"
     enabled: "§aAktiviert"
     disabled: "§cDeaktiviert"
     status: "§7Status: §f%status%"

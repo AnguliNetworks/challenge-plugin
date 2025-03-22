@@ -60,7 +60,16 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
             challenge.settings.naturalRegeneration,
             player
         )
-        inventory.setItem(11, naturalRegenItem)
+        inventory.setItem(10, naturalRegenItem)
+        
+        // Add Sync Hearts toggle
+        val syncHeartsItem = createToggleItem(
+            if (challenge.settings.syncHearts) Material.TOTEM_OF_UNDYING else Material.WITHER_SKELETON_SKULL,
+            "sync_hearts",
+            challenge.settings.syncHearts,
+            player
+        )
+        inventory.setItem(11, syncHeartsItem)
 
         // Add Start Challenge button
         val startItem = ItemStack(Material.DIAMOND_SWORD)
@@ -114,7 +123,7 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
 
         when (event.slot) {
             // Natural Regeneration toggle
-            11 -> {
+            10 -> {
                 challenge.settings.naturalRegeneration = !challenge.settings.naturalRegeneration
 
                 // Update item to reflect new setting
@@ -122,6 +131,22 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
                     if (challenge.settings.naturalRegeneration) Material.GOLDEN_APPLE else Material.ROTTEN_FLESH,
                     "natural_regeneration",
                     challenge.settings.naturalRegeneration,
+                    player
+                )
+                event.inventory.setItem(10, newItem)
+
+                player.playSound(player.location, "minecraft:ui.button.click", 1.0f, 1.0f)
+            }
+            
+            // Sync Hearts toggle
+            11 -> {
+                challenge.settings.syncHearts = !challenge.settings.syncHearts
+
+                // Update item to reflect new setting
+                val newItem = createToggleItem(
+                    if (challenge.settings.syncHearts) Material.TOTEM_OF_UNDYING else Material.WITHER_SKELETON_SKULL,
+                    "sync_hearts",
+                    challenge.settings.syncHearts,
                     player
                 )
                 event.inventory.setItem(11, newItem)

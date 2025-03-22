@@ -16,7 +16,8 @@ enum class ChallengeStatus {
 }
 
 data class ChallengeSettings(
-    var naturalRegeneration: Boolean = true
+    var naturalRegeneration: Boolean = true,
+    var syncHearts: Boolean = false
 )
 
 class Challenge(
