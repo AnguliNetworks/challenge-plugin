@@ -45,6 +45,20 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    
+    // Custom archiveFileName for snapshots
+    if (version.toString().contains("SNAPSHOT")) {
+        // Generate timestamp in format yyyyMMdd-HHmmss
+        val timestamp = java.time.format.DateTimeFormatter
+            .ofPattern("yyyyMMdd-HHmmss")
+            .format(java.time.LocalDateTime.now())
+            
+        // Generate UUID and get first part (before first dash)
+        val uuid = java.util.UUID.randomUUID().toString().split("-")[0]
+        
+        // Set custom archive name for snapshots
+        archiveFileName.set("${project.name}-v${version.toString().replace("-SNAPSHOT", "")}_SNAPSHOT_${timestamp}_${uuid}.jar")
+    }
 }
 
 // Task to copy JAR to test server

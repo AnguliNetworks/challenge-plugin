@@ -52,12 +52,24 @@ jobs:
         files: build/libs/*.jar
         generate_release_notes: true
         
+    - name: Get current date and time
+      id: datetime
+      run: echo "datetime=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+      
+    - name: Generate UUID part
+      id: uuid
+      run: echo "uuid=$(uuidgen | cut -d'-' -f1)" >> $GITHUB_OUTPUT
+      
+    - name: Get version from gradle
+      id: version
+      run: echo "version=$(./gradlew properties -q | grep "version:" | awk '{print $2}' | sed 's/-SNAPSHOT//')" >> $GITHUB_OUTPUT
+      
     - name: Create Snapshot Release
       if: github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
         files: build/libs/*.jar
-        name: SNAPSHOT-${{ steps.shortsha.outputs.sha }}
-        tag_name: snapshot-${{ steps.shortsha.outputs.sha }}
+        name: v${{ steps.version.outputs.version }}_SNAPSHOT_${{ steps.datetime.outputs.datetime }}_${{ steps.uuid.outputs.uuid }}
+        tag_name: v${{ steps.version.outputs.version }}_SNAPSHOT_${{ steps.datetime.outputs.datetime }}_${{ steps.uuid.outputs.uuid }}
         prerelease: true
         generate_release_notes: true
