@@ -5,6 +5,7 @@ import li.angu.challengeplugin.commands.*
 import li.angu.challengeplugin.managers.ChallengeManager
 import li.angu.challengeplugin.managers.PlayerDataManager
 import li.angu.challengeplugin.managers.ChallengeSettingsManager
+import li.angu.challengeplugin.managers.ChallengeMenuManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.listeners.PlayerConnectionListener
 import li.angu.challengeplugin.listeners.PlayerHealthListener
@@ -17,6 +18,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var languageManager: LanguageManager
     open lateinit var playerDataManager: PlayerDataManager
     open lateinit var challengeSettingsManager: ChallengeSettingsManager
+    open lateinit var challengeMenuManager: ChallengeMenuManager
     
     /**
      * Helper method to register a command with its executor and tab completer
@@ -41,6 +43,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         playerDataManager = PlayerDataManager(this)
         challengeManager = ChallengeManager(this)
         challengeSettingsManager = ChallengeSettingsManager(this)
+        challengeMenuManager = ChallengeMenuManager(this)
 
         // Register commands
         // Main challenge commands
@@ -50,7 +53,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         registerCommand("leave", LeaveCommand(this))
         registerCommand("info", InfoCommand(this))
         registerCommand("delete", DeleteCommand(this))
-        registerCommand("challenge", ChallengeHelpCommand(this))
+        registerCommand("challenge", ChallengeCommand(this))
         
         // Other commands
         registerCommand("lang", LanguageCommand(this))
@@ -85,8 +88,9 @@ open class ChallengePluginPlugin : JavaPlugin() {
             }
         }
         
-        // Cleanup the settings manager
+        // Cleanup managers
         challengeSettingsManager.cleanup()
+        challengeMenuManager.cleanup()
 
         logger.info(languageManager.getMessage("plugin.disabled"))
     }

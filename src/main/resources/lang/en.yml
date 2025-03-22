@@ -36,6 +36,11 @@ challenge:
   delete_failed: "§cFailed to delete challenge."
   cannot_delete_active: "§cCannot delete challenge with active players. Players must leave first."
   confirm_deletion: "§cAre you sure you want to delete challenge '§f%name%§c'? Type §f/delete %id% confirm§c to confirm."
+  name_prompt: "§6Please enter a name for your challenge:"
+  name_enter: "§7Type the challenge name in chat. Type 'cancel' to cancel."
+  name_invalid: "§cInvalid challenge name. Please try again."
+  name_title: "§e§lName Your Challenge"
+  name_subtitle: "§fType a name in chat"
   creating:
     title: "§6§lCreating Challenge"
     subtitle: "§7Generating world with your settings..."
@@ -49,6 +54,23 @@ challenge:
     disabled: "§cDisabled"
     status: "§7Status: §f%status%"
     click_to_toggle: "§7Click to toggle"
+  menu:
+    title: "§9§lChallenges"
+    create: "§a§lCreate Challenge"
+    create_lore: "§7Click to create a new challenge"
+    leave: "§c§lLeave Challenge"
+    leave_lore: "§7Click to leave your current challenge"
+    challenge: "§f%name%"
+    current_challenge: "§a§l%name%"
+    id: "§7ID: §f%id%"
+    status: "§7Status: §f%status%"
+    players: "§7Players: §f%count%"
+    duration: "§7Duration: §f%time%"
+    click_to_join: "§7Click to join this challenge"
+    click_to_leave: "§c§lClick to leave this challenge"
+  menu_item:
+    name: "§6§lChallenge Menu"
+    lore: "§7Right-click to open Challenges"
 
 status:
   active: "§aActive"

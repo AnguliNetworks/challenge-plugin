@@ -7,7 +7,7 @@ author: li.angu
 commands:
   create:
     description: Create a new challenge
-    usage: /create <name>
+    usage: /create [name]
   list:
     description: List all available challenges
     usage: /list
@@ -25,9 +25,8 @@ commands:
     usage: /delete <challenge-id> [confirm]
     permission: challengeplugin.delete
   challenge:
-    description: Show a list of available challenge commands
+    description: Open the challenge menu
     usage: /challenge
-    aliases: [chelp]
   lang:
     description: Change your preferred language
     usage: /lang <language>

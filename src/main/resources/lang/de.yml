@@ -36,6 +36,11 @@ challenge:
   delete_failed: "§cLöschen der Herausforderung fehlgeschlagen."
   cannot_delete_active: "§cHerausforderung mit aktiven Spielern kann nicht gelöscht werden. Spieler müssen zuerst die Herausforderung verlassen."
   confirm_deletion: "§cBist du sicher, dass du die Herausforderung '§f%name%§c' löschen möchtest? Tippe §f/delete %id% confirm§c zur Bestätigung."
+  name_prompt: "§6Bitte gib einen Namen für deine Herausforderung ein:"
+  name_enter: "§7Tippe den Namen der Herausforderung im Chat. Tippe 'cancel' zum Abbrechen."
+  name_invalid: "§cUngültiger Herausforderungsname. Bitte versuche es erneut."
+  name_title: "§e§lBenenne deine Herausforderung"
+  name_subtitle: "§fGib einen Namen im Chat ein"
   creating:
     title: "§6§lErstelle Herausforderung"
     subtitle: "§7Generiere Welt mit deinen Einstellungen..."
@@ -49,6 +54,23 @@ challenge:
     disabled: "§cDeaktiviert"
     status: "§7Status: §f%status%"
     click_to_toggle: "§7Klicke zum Umschalten"
+  menu:
+    title: "§9§lHerausforderungen"
+    create: "§a§lHerausforderung erstellen"
+    create_lore: "§7Klicke, um eine neue Herausforderung zu erstellen"
+    leave: "§c§lHerausforderung verlassen"
+    leave_lore: "§7Klicke, um deine aktuelle Herausforderung zu verlassen"
+    challenge: "§f%name%"
+    current_challenge: "§a§l%name%"
+    id: "§7ID: §f%id%"
+    status: "§7Status: §f%status%"
+    players: "§7Spieler: §f%count%"
+    duration: "§7Dauer: §f%time%"
+    click_to_join: "§7Klicke, um dieser Herausforderung beizutreten"
+    click_to_leave: "§c§lKlicke, um diese Herausforderung zu verlassen"
+  menu_item:
+    name: "§6§lHerausforderungsmenü"
+    lore: "§7Rechtsklick zum Öffnen"
 
 status:
   active: "§aAktiv"
