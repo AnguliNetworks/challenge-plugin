@@ -5,9 +5,29 @@ api-version: 1.20
 description: A Minecraft challenge plugin with hardcore Ender Dragon fights
 author: li.angu
 commands:
+  create:
+    description: Create a new challenge
+    usage: /create <name>
+  list:
+    description: List all available challenges
+    usage: /list
+  join:
+    description: Join an existing challenge
+    usage: /join <challenge-id>
+  leave:
+    description: Leave your current challenge
+    usage: /leave
+  info:
+    description: Show information about a challenge
+    usage: /info [challenge-id]
+  delete:
+    description: Delete a challenge and its worlds
+    usage: /delete <challenge-id> [confirm]
+    permission: challengeplugin.delete
   challenge:
-    description: Manage minecraft challenges
-    usage: /challenge <create|list|join|leave|info>
+    description: Show a list of available challenge commands
+    usage: /challenge
+    aliases: [chelp]
   lang:
     description: Change your preferred language
     usage: /lang <language>
@@ -19,3 +39,10 @@ commands:
     description: Display all Minecraft chat colors and formats
     usage: /debugcolors
     permission: challengeplugin.debug
+permissions:
+  challengeplugin.debug:
+    description: Access to debug commands
+    default: op
+  challengeplugin.delete:
+    description: Permission to delete challenges
+    default: op

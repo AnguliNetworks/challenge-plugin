@@ -1,49 +1,38 @@
 package li.angu.challengeplugin.commands
 
 import li.angu.challengeplugin.ChallengePluginPlugin
-import org.bukkit.command.Command
-import org.bukkit.command.CommandExecutor
-import org.bukkit.command.CommandSender
-import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 
-class LanguageCommand(private val plugin: ChallengePluginPlugin) : CommandExecutor, TabCompleter {
+class LanguageCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
     
-    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        plugin.logger.info("LanguageCommand executed by ${sender.name} with label: $label and args: ${args.joinToString()}")
-        
-        if (sender !is Player) {
-            sender.sendMessage(plugin.languageManager.getMessage("command.player_only"))
-            return true
-        }
-        
+    override fun execute(player: Player, args: Array<out String>): Boolean {
         if (args.isEmpty()) {
             // Show current language and available languages
-            val currentLang = plugin.languageManager.getPlayerLanguage(sender)
-            sender.sendMessage(plugin.languageManager.getMessage("language.current", sender, "lang" to currentLang))
+            val currentLang = plugin.languageManager.getPlayerLanguage(player)
+            player.sendMessage(plugin.languageManager.getMessage("language.current", player, "lang" to currentLang))
             
             val availableLanguages = plugin.languageManager.getAvailableLanguages().joinToString(", ")
-            sender.sendMessage(plugin.languageManager.getMessage("language.available", sender, "languages" to availableLanguages))
-            sender.sendMessage(plugin.languageManager.getMessage("language.usage", sender))
+            player.sendMessage(plugin.languageManager.getMessage("language.available", player, "languages" to availableLanguages))
+            player.sendMessage(plugin.languageManager.getMessage("language.usage", player))
             return true
         }
         
         val newLang = args[0].lowercase()
         if (!plugin.languageManager.getAvailableLanguages().contains(newLang)) {
-            sender.sendMessage(plugin.languageManager.getMessage("language.not_available", sender, "lang" to newLang))
+            player.sendMessage(plugin.languageManager.getMessage("language.not_available", player, "lang" to newLang))
             
             val availableLanguages = plugin.languageManager.getAvailableLanguages().joinToString(", ")
-            sender.sendMessage(plugin.languageManager.getMessage("language.available", sender, "languages" to availableLanguages))
+            player.sendMessage(plugin.languageManager.getMessage("language.available", player, "languages" to availableLanguages))
             return true
         }
         
-        plugin.languageManager.setPlayerLanguage(sender, newLang)
-        sender.sendMessage(plugin.languageManager.getMessage("language.changed", sender, "lang" to newLang))
+        plugin.languageManager.setPlayerLanguage(player, newLang)
+        player.sendMessage(plugin.languageManager.getMessage("language.changed", player, "lang" to newLang))
         return true
     }
     
-    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
-        if (sender !is Player || args.size > 1) {
+    override fun tabComplete(player: Player, args: Array<out String>): List<String> {
+        if (args.size > 1) {
             return emptyList()
         }
         

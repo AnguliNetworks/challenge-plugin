@@ -30,6 +30,7 @@ class ChallengeCommand(private val plugin: ChallengePluginPlugin) : CommandExecu
             "join" -> handleJoin(sender, args)
             "leave" -> handleLeave(sender)
             "info" -> handleInfo(sender, args)
+            "delete" -> handleDelete(sender, args)
             else -> showHelp(sender)
         }
 
@@ -180,6 +181,69 @@ class ChallengeCommand(private val plugin: ChallengePluginPlugin) : CommandExecu
         player.sendMessage(plugin.languageManager.getMessage("command.help.join", player))
         player.sendMessage(plugin.languageManager.getMessage("command.help.leave", player))
         player.sendMessage(plugin.languageManager.getMessage("command.help.info", player))
+        
+        // Only show delete command if player has permission
+        if (player.hasPermission("challengeplugin.delete")) {
+            player.sendMessage(plugin.languageManager.getMessage("command.help.delete", player))
+        }
+    }
+    
+    private fun handleDelete(player: Player, args: Array<out String>) {
+        // Check permission
+        if (!player.hasPermission("challengeplugin.delete")) {
+            player.sendMessage(plugin.languageManager.getMessage("challenge.delete_no_permission", player))
+            return
+        }
+        
+        // Check arguments
+        if (args.size < 2) {
+            player.sendMessage(plugin.languageManager.getMessage("command.usage.delete", player))
+            return
+        }
+        
+        // Parse challenge ID
+        val id = try {
+            UUID.fromString(args[1])
+        } catch (e: IllegalArgumentException) {
+            player.sendMessage(plugin.languageManager.getMessage("challenge.invalid_id", player))
+            return
+        }
+        
+        // Get challenge
+        val challenge = plugin.challengeManager.getChallenge(id)
+        if (challenge == null) {
+            player.sendMessage(plugin.languageManager.getMessage("challenge.not_found", player))
+            return
+        }
+        
+        // Check for confirmation
+        val needsConfirmation = args.size < 3 || args[2].lowercase() != "confirm"
+        if (needsConfirmation) {
+            player.sendMessage(plugin.languageManager.getMessage("challenge.confirm_deletion", player,
+                "name" to challenge.name,
+                "id" to challenge.id.toString()
+            ))
+            return
+        }
+        
+        // Check if players are currently online in the challenge
+        val hasOnlinePlayers = challenge.players.any { playerId ->
+            plugin.server.getPlayer(playerId) != null
+        }
+        
+        if (hasOnlinePlayers) {
+            player.sendMessage(plugin.languageManager.getMessage("challenge.cannot_delete_active", player))
+            return
+        }
+        
+        // Delete the challenge
+        if (plugin.challengeManager.deleteChallenge(id)) {
+            player.sendMessage(plugin.languageManager.getMessage("challenge.deleted_successfully", player, 
+                "name" to challenge.name
+            ))
+        } else {
+            player.sendMessage(plugin.languageManager.getMessage("challenge.delete_failed", player))
+        }
     }
 
     override fun onTabComplete(
@@ -193,15 +257,38 @@ class ChallengeCommand(private val plugin: ChallengePluginPlugin) : CommandExecu
         }
 
         if (args.size == 1) {
-            val subCommands = listOf("create", "list", "join", "leave", "info")
+            val subCommands = mutableListOf("create", "list", "join", "leave", "info")
+            
+            // Add delete command if player has permission
+            if (sender.hasPermission("challengeplugin.delete")) {
+                subCommands.add("delete")
+            }
+            
             return subCommands.filter { it.startsWith(args[0].lowercase()) }
         }
 
-        if (args.size == 2 && (args[0].equals("join", ignoreCase = true) || args[0].equals("info", ignoreCase = true))) {
-            return plugin.challengeManager.getAllChallenges()
-                .filter { it.status == ChallengeStatus.ACTIVE }
-                .map { it.id.toString() }
-                .filter { it.startsWith(args[1]) }
+        if (args.size == 2) {
+            when(args[0].lowercase()) {
+                "join", "info" -> {
+                    return plugin.challengeManager.getAllChallenges()
+                        .filter { it.status == ChallengeStatus.ACTIVE }
+                        .map { it.id.toString() }
+                        .filter { it.startsWith(args[1]) }
+                }
+                "delete" -> {
+                    // Only show suggestions if player has permission
+                    if (sender.hasPermission("challengeplugin.delete")) {
+                        return plugin.challengeManager.getAllChallenges()
+                            .map { it.id.toString() }
+                            .filter { it.startsWith(args[1]) }
+                    }
+                }
+            }
+        }
+        
+        // Add 'confirm' as a tab completion for the delete command
+        if (args.size == 3 && args[0].equals("delete", ignoreCase = true)) {
+            return listOf("confirm").filter { it.startsWith(args[2].lowercase()) }
         }
 
         return emptyList()

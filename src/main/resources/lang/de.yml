@@ -11,7 +11,7 @@ language:
 
 challenge:
   created: "§aHerausforderung '%name%' erfolgreich erstellt!"
-  join_command: "§7Nutze §f/challenge join %id%§7 um beizutreten"
+  join_command: "§7Nutze §f/join %id%§7 um beizutreten"
   joined: "§aDu bist der Herausforderung '§f%name%§a' beigetreten"
   left: "§aDu hast die Herausforderung '§f%name%§a' verlassen"
   not_in: "§cDu bist in keiner Herausforderung"
@@ -31,6 +31,11 @@ challenge:
   reconnected: "§aWillkommen zurück! Dein Inventar und deine Position in der Herausforderung '§f%name%§a' wurden wiederhergestellt."
   create_cancelled: "§cErstellung der Herausforderung abgebrochen."
   create_failed: "§cErstellung der Herausforderungswelt fehlgeschlagen."
+  delete_no_permission: "§cDu hast keine Berechtigung, Herausforderungen zu löschen."
+  deleted_successfully: "§aHerausforderung '§f%name%§a' wurde gelöscht."
+  delete_failed: "§cLöschen der Herausforderung fehlgeschlagen."
+  cannot_delete_active: "§cHerausforderung mit aktiven Spielern kann nicht gelöscht werden. Spieler müssen zuerst die Herausforderung verlassen."
+  confirm_deletion: "§cBist du sicher, dass du die Herausforderung '§f%name%§c' löschen möchtest? Tippe §f/delete %id% confirm§c zur Bestätigung."
   creating:
     title: "§6§lErstelle Herausforderung"
     subtitle: "§7Generiere Welt mit deinen Einstellungen..."
@@ -60,15 +65,17 @@ command:
     no_end_world: "§cKonnte die End-Welt für diese Herausforderung nicht finden."
     no_dragon: "§cKonnte den Enderdrachen in der End-Welt nicht finden."
   usage:
-    create: "§cVerwendung: /challenge create <name>"
-    join: "§cVerwendung: /challenge join <id>"
+    create: "§cVerwendung: /create <name>"
+    join: "§cVerwendung: /join <id>"
+    delete: "§cVerwendung: /delete <id>"
   help:
     title: "§6Herausforderungs-Plugin Befehle:"
-    create: "§7/challenge create <name> §f- Erstelle eine neue Herausforderung"
-    list: "§7/challenge list §f- Liste alle Herausforderungen auf"
-    join: "§7/challenge join <id> §f- Tritt einer Herausforderung bei"
-    leave: "§7/challenge leave §f- Verlasse deine aktuelle Herausforderung"
-    info: "§7/challenge info [id] §f- Zeige Informationen über eine Herausforderung"
+    create: "§7/create <name> §f- Erstelle eine neue Herausforderung"
+    list: "§7/list §f- Liste alle Herausforderungen auf"
+    join: "§7/join <id> §f- Tritt einer Herausforderung bei"
+    leave: "§7/leave §f- Verlasse deine aktuelle Herausforderung"
+    info: "§7/info [id] §f- Zeige Informationen über eine Herausforderung"
+    delete: "§7/delete <id> §f- Lösche eine Herausforderung und ihre Welten"
   list:
     title: "§6Verfügbare Herausforderungen:"
     format: "§7- §f%name% §7(%id%) §7- %status% §7- §f%player_count% Spieler"

@@ -1,32 +1,21 @@
 package li.angu.challengeplugin.commands
 
 import li.angu.challengeplugin.ChallengePluginPlugin
-import org.bukkit.command.Command
-import org.bukkit.command.CommandExecutor
-import org.bukkit.command.CommandSender
-import org.bukkit.command.TabCompleter
 import org.bukkit.entity.EnderDragon
 import org.bukkit.entity.EnderCrystal
 import org.bukkit.entity.Player
 import org.bukkit.attribute.Attribute
 import org.bukkit.scheduler.BukkitRunnable
 
-class DebugDragonCommand(private val plugin: ChallengePluginPlugin) : CommandExecutor, TabCompleter {
+class DebugDragonCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
 
-    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        // Only players can execute this command
-        if (sender !is Player) {
-            sender.sendMessage(plugin.languageManager.getMessage("command.player_only"))
-            return true
-        }
-
+    override fun execute(player: Player, args: Array<out String>): Boolean {
         // Check permission
-        if (!sender.hasPermission("challengeplugin.debug")) {
-            sender.sendMessage(plugin.languageManager.getMessage("command.debug.no_permission", sender))
+        if (!player.hasPermission("challengeplugin.debug")) {
+            player.sendMessage(plugin.languageManager.getMessage("command.debug.no_permission", player))
             return true
         }
 
-        val player = sender as Player
         val challenge = plugin.challengeManager.getPlayerChallenge(player)
 
         if (challenge == null) {
@@ -78,15 +67,5 @@ class DebugDragonCommand(private val plugin: ChallengePluginPlugin) : CommandExe
             }
         }.runTaskLater(plugin, 40) // 40 ticks = 2 seconds
         return true
-    }
-
-    override fun onTabComplete(
-        sender: CommandSender,
-        command: Command,
-        alias: String,
-        args: Array<out String>
-    ): List<String> {
-        // No tab completion options for this command
-        return emptyList()
     }
 }

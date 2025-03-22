@@ -11,7 +11,7 @@ language:
 
 challenge:
   created: "§aChallenge '%name%' created successfully!"
-  join_command: "§7Use §f/challenge join %id%§7 to join it"
+  join_command: "§7Use §f/join %id%§7 to join it"
   joined: "§aYou joined the challenge '§f%name%§a'"
   left: "§aYou left the challenge '§f%name%§a'"
   not_in: "§cYou are not in a challenge"
@@ -31,6 +31,11 @@ challenge:
   reconnected: "§aWelcome back! Your inventory and location in challenge '§f%name%§a' have been restored."
   create_cancelled: "§cChallenge creation cancelled."
   create_failed: "§cFailed to create challenge world."
+  delete_no_permission: "§cYou don't have permission to delete challenges."
+  deleted_successfully: "§aChallenge '§f%name%§a' has been deleted."
+  delete_failed: "§cFailed to delete challenge."
+  cannot_delete_active: "§cCannot delete challenge with active players. Players must leave first."
+  confirm_deletion: "§cAre you sure you want to delete challenge '§f%name%§c'? Type §f/delete %id% confirm§c to confirm."
   creating:
     title: "§6§lCreating Challenge"
     subtitle: "§7Generating world with your settings..."
@@ -60,15 +65,17 @@ command:
     no_end_world: "§cCouldn't find the End world for this challenge."
     no_dragon: "§cCouldn't find the Ender Dragon in the End world."
   usage:
-    create: "§cUsage: /challenge create <name>"
-    join: "§cUsage: /challenge join <id>"
+    create: "§cUsage: /create <name>"
+    join: "§cUsage: /join <id>"
+    delete: "§cUsage: /delete <id>"
   help:
     title: "§6Challenge Plugin Commands:"
-    create: "§7/challenge create <name> §f- Create a new challenge"
-    list: "§7/challenge list §f- List all challenges"
-    join: "§7/challenge join <id> §f- Join a challenge"
-    leave: "§7/challenge leave §f- Leave your current challenge"
-    info: "§7/challenge info [id] §f- Show info about a challenge"
+    create: "§7/create <name> §f- Create a new challenge"
+    list: "§7/list §f- List all challenges"
+    join: "§7/join <id> §f- Join a challenge"
+    leave: "§7/leave §f- Leave your current challenge"
+    info: "§7/info [id] §f- Show info about a challenge"
+    delete: "§7/delete <id> §f- Delete a challenge and its worlds"
   list:
     title: "§6Available Challenges:"
     format: "§7- §f%name% §7(%id%) §7- %status% §7- §f%player_count% players"

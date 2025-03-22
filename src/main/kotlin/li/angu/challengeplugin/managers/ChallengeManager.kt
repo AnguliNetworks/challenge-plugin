@@ -153,6 +153,102 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     fun removeChallenge(challengeId: UUID) {
         activeChallenges.remove(challengeId)
     }
+    
+    /**
+     * Deletes a challenge and its world folders.
+     * Returns true if successful, false otherwise.
+     */
+    fun deleteChallenge(challengeId: UUID): Boolean {
+        val challenge = getChallenge(challengeId) ?: return false
+        
+        // Don't delete if players are still in the challenge
+        if (challenge.players.isNotEmpty()) {
+            // Check if any of the players are online
+            val hasOnlinePlayers = challenge.players.any { playerId ->
+                plugin.server.getPlayer(playerId) != null
+            }
+            
+            if (hasOnlinePlayers) {
+                return false
+            }
+        }
+        
+        // Get world names
+        val mainWorldName = challenge.worldName
+        val netherWorldName = "${mainWorldName}_nether"
+        val endWorldName = "${mainWorldName}_the_end"
+        
+        // Unload worlds if they're loaded
+        unloadWorld(mainWorldName)
+        unloadWorld(netherWorldName)
+        unloadWorld(endWorldName)
+        
+        // Delete challenge data file
+        val challengeFile = File(dataFolder, "${challenge.id}.yml")
+        if (challengeFile.exists()) {
+            challengeFile.delete()
+        }
+        
+        // Remove from activeChallenges
+        activeChallenges.remove(challengeId)
+        
+        // Remove from playerChallengeMap
+        challenge.players.forEach { playerId ->
+            playerChallengeMap.remove(playerId)
+        }
+        
+        // Delete world folders
+        val serverDir = plugin.server.worldContainer
+        val worldsDeleted = deleteWorldFolder(File(serverDir, mainWorldName)) &&
+                       deleteWorldFolder(File(serverDir, netherWorldName)) &&
+                       deleteWorldFolder(File(serverDir, endWorldName))
+        
+        return worldsDeleted
+    }
+    
+    /**
+     * Unloads a world properly.
+     */
+    private fun unloadWorld(worldName: String): Boolean {
+        val world = Bukkit.getWorld(worldName) ?: return true
+        
+        // Teleport any players out of this world
+        world.players.forEach { player ->
+            val mainWorld = Bukkit.getWorlds().firstOrNull()
+            if (mainWorld != null) {
+                player.teleport(mainWorld.spawnLocation)
+            }
+        }
+        
+        // Unload the world
+        return Bukkit.unloadWorld(world, false)
+    }
+    
+    /**
+     * Recursively deletes a world folder.
+     */
+    private fun deleteWorldFolder(worldFolder: File): Boolean {
+        if (!worldFolder.exists()) {
+            return true
+        }
+        
+        try {
+            // Delete all files and subdirectories
+            worldFolder.listFiles()?.forEach { file ->
+                if (file.isDirectory) {
+                    deleteWorldFolder(file)
+                } else {
+                    file.delete()
+                }
+            }
+            
+            // Delete the world folder itself
+            return worldFolder.delete()
+        } catch (e: Exception) {
+            plugin.logger.severe("Failed to delete world folder ${worldFolder.name}: ${e.message}")
+            return false
+        }
+    }
 
     /**
      * Map a player to a challenge without resetting inventory or teleporting

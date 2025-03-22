@@ -1,10 +1,7 @@
 package li.angu.challengeplugin
 
 import org.bukkit.plugin.java.JavaPlugin
-import li.angu.challengeplugin.commands.ChallengeCommand
-import li.angu.challengeplugin.commands.LanguageCommand
-import li.angu.challengeplugin.commands.DebugDragonCommand
-import li.angu.challengeplugin.commands.DebugColorsCommand
+import li.angu.challengeplugin.commands.*
 import li.angu.challengeplugin.managers.ChallengeManager
 import li.angu.challengeplugin.managers.PlayerDataManager
 import li.angu.challengeplugin.managers.ChallengeSettingsManager
@@ -20,6 +17,20 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var languageManager: LanguageManager
     open lateinit var playerDataManager: PlayerDataManager
     open lateinit var challengeSettingsManager: ChallengeSettingsManager
+    
+    /**
+     * Helper method to register a command with its executor and tab completer
+     */
+    private fun registerCommand(name: String, executor: BaseCommand) {
+        val command = getCommand(name)
+        if (command != null) {
+            command.setExecutor(executor)
+            command.tabCompleter = executor
+            logger.info("$name command executor and tab completer set")
+        } else {
+            logger.warning("Failed to register $name command - not found in plugin.yml")
+        }
+    }
 
     override open fun onEnable() {
         // Make sure the data folder exists
@@ -32,49 +43,23 @@ open class ChallengePluginPlugin : JavaPlugin() {
         challengeSettingsManager = ChallengeSettingsManager(this)
 
         // Register commands
-        val challengeCommand = getCommand("challenge")
-        val langCommand = getCommand("lang")
-        val debugDragonCommand = getCommand("debugdragon")
-        val debugColorsCommand = getCommand("debugcolors")
+        // Main challenge commands
+        registerCommand("create", CreateCommand(this))
+        registerCommand("list", ListCommand(this))
+        registerCommand("join", JoinCommand(this))
+        registerCommand("leave", LeaveCommand(this))
+        registerCommand("info", InfoCommand(this))
+        registerCommand("delete", DeleteCommand(this))
+        registerCommand("challenge", ChallengeHelpCommand(this))
         
-        // Log command registration status and available commands
-        logger.info("Challenge command registration: ${challengeCommand != null}")
-        logger.info("Lang command registration: ${langCommand != null}")
-        logger.info("Debug Dragon command registration: ${debugDragonCommand != null}")
-        logger.info("Debug Colors command registration: ${debugColorsCommand != null}")
+        // Other commands
+        registerCommand("lang", LanguageCommand(this))
+        registerCommand("debugdragon", DebugDragonCommand(this))
+        registerCommand("debugcolors", DebugColorsCommand(this))
         
         // Log all commands registered with this plugin
         getDescription().commands.forEach { (name, _) ->
             logger.info("Plugin has command registered: $name")
-        }
-        
-        // Set command executors and tab completers if commands are registered
-        if (challengeCommand != null) {
-            val challengeCommandExecutor = ChallengeCommand(this)
-            challengeCommand.setExecutor(challengeCommandExecutor)
-            challengeCommand.tabCompleter = challengeCommandExecutor
-            logger.info("Challenge command executor and tab completer set")
-        }
-        
-        if (langCommand != null) {
-            val langCommandExecutor = LanguageCommand(this)
-            langCommand.setExecutor(langCommandExecutor)
-            langCommand.tabCompleter = langCommandExecutor
-            logger.info("Lang command executor and tab completer set")
-        }
-        
-        if (debugDragonCommand != null) {
-            val debugDragonCommandExecutor = DebugDragonCommand(this)
-            debugDragonCommand.setExecutor(debugDragonCommandExecutor)
-            debugDragonCommand.tabCompleter = debugDragonCommandExecutor
-            logger.info("Debug Dragon command executor and tab completer set")
-        }
-        
-        if (debugColorsCommand != null) {
-            val debugColorsCommandExecutor = DebugColorsCommand(this)
-            debugColorsCommand.setExecutor(debugColorsCommandExecutor)
-            debugColorsCommand.tabCompleter = debugColorsCommandExecutor
-            logger.info("Debug Colors command executor and tab completer set")
         }
 
         // Register listeners
