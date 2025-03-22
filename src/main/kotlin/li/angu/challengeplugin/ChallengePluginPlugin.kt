@@ -19,7 +19,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var playerDataManager: PlayerDataManager
     open lateinit var challengeSettingsManager: ChallengeSettingsManager
     open lateinit var challengeMenuManager: ChallengeMenuManager
-    
+
     /**
      * Helper method to register a command with its executor and tab completer
      */
@@ -54,16 +54,11 @@ open class ChallengePluginPlugin : JavaPlugin() {
         registerCommand("info", InfoCommand(this))
         registerCommand("delete", DeleteCommand(this))
         registerCommand("challenge", ChallengeCommand(this))
-        
+
         // Other commands
         registerCommand("lang", LanguageCommand(this))
         registerCommand("debugdragon", DebugDragonCommand(this))
         registerCommand("debugcolors", DebugColorsCommand(this))
-        
-        // Log all commands registered with this plugin
-        getDescription().commands.forEach { (name, _) ->
-            logger.info("Plugin has command registered: $name")
-        }
 
         // Register listeners
         server.pluginManager.registerEvents(DragonDefeatListener(this), this)
@@ -79,7 +74,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     override open fun onDisable() {
         // Save any active challenges
         challengeManager.saveActiveChallenges()
-        
+
         // Save player data for all online players that are in challenges
         server.onlinePlayers.forEach { player ->
             val challenge = challengeManager.getPlayerChallenge(player)
@@ -87,7 +82,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
                 playerDataManager.savePlayerData(player, challenge.id)
             }
         }
-        
+
         // Cleanup managers
         challengeSettingsManager.cleanup()
         challengeMenuManager.cleanup()
