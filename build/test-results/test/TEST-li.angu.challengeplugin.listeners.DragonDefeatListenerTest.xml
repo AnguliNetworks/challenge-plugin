@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="li.angu.challengeplugin.listeners.DragonDefeatListenerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2025-03-22T00:57:21" hostname="MacBook-Pro-5.local" time="0.374">
+  <properties/>
+  <testcase name="test player respawn after death sets spectator mode at death location()" classname="li.angu.challengeplugin.listeners.DragonDefeatListenerTest" time="0.266"/>
+  <testcase name="test player death in challenge saves location()" classname="li.angu.challengeplugin.listeners.DragonDefeatListenerTest" time="0.018"/>
+  <testcase name="test ender dragon death completes challenge()" classname="li.angu.challengeplugin.listeners.DragonDefeatListenerTest" time="0.089"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[01:57:21 INFORMATION]: Loaded language: en
+[01:57:21 INFORMATION]: Loaded language: de
+[01:57:21 INFORMATION]: ChallengePlugin has been enabled!
+[01:57:21 INFORMATION]: Loaded language: en
+[01:57:21 INFORMATION]: Loaded language: de
+[01:57:21 INFORMATION]: ChallengePlugin has been enabled!
+[01:57:22 INFORMATION]: Loaded language: en
+[01:57:22 INFORMATION]: Loaded language: de
+[01:57:22 INFORMATION]: ChallengePlugin has been enabled!
+]]></system-err>
+</testsuite>

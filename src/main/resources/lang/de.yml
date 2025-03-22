@@ -1,0 +1,60 @@
+plugin:
+  enabled: "ChallengePlugin wurde aktiviert!"
+  disabled: "ChallengePlugin wurde deaktiviert!"
+
+language:
+  current: "§aAktuelle Sprache: §f%lang%"
+  available: "§aVerfügbare Sprachen: §f%languages%"
+  usage: "§aVerwende §f/lang <sprache> §azum Ändern deiner Sprache"
+  changed: "§aSprache eingestellt auf: §f%lang%"
+  not_available: "§cSprache nicht verfügbar: §f%lang%"
+
+challenge:
+  created: "§aHerausforderung '%name%' erfolgreich erstellt!"
+  join_command: "§7Nutze §f/challenge join %id%§7 um beizutreten"
+  joined: "§aDu bist der Herausforderung '§f%name%§a' beigetreten"
+  left: "§aDu hast die Herausforderung '§f%name%§a' verlassen"
+  not_in: "§cDu bist in keiner Herausforderung"
+  not_found: "§cHerausforderung nicht gefunden"
+  join_failed: "§cBeitritt zur Herausforderung fehlgeschlagen"
+  leave_failed: "§cVerlassen der Herausforderung fehlgeschlagen"
+  no_challenges: "§cEs sind keine Herausforderungen verfügbar"
+  already_completed: "§cDiese Herausforderung ist nicht mehr aktiv"
+  not_started: "§7Nicht gestartet"
+  invalid_id: "§cUngültige Herausforderungs-ID"
+  died: "§cDu bist gestorben! Im Hardcore-Modus bist du jetzt ein Zuschauer."
+  dragon_defeated: "§6§lDer Enderdrache wurde besiegt! Herausforderung abgeschlossen!"
+  dragon_defeated_title: "§6Herausforderung Abgeschlossen!"
+  dragon_defeated_subtitle: "§eDer Enderdrache wurde besiegt!"
+  completed: "§aGlückwunsch! Die Herausforderung '§f%name%§a' wurde abgeschlossen!"
+  duration_display: "§e%time%"
+
+status:
+  active: "§aAktiv"
+  completed: "§6Abgeschlossen"
+  failed: "§cFehlgeschlagen"
+
+command:
+  player_only: "§cDieser Befehl kann nur von Spielern verwendet werden"
+  usage:
+    create: "§cVerwendung: /challenge create <name>"
+    join: "§cVerwendung: /challenge join <id>"
+  help:
+    title: "§6Herausforderungs-Plugin Befehle:"
+    create: "§7/challenge create <name> §f- Erstelle eine neue Herausforderung"
+    list: "§7/challenge list §f- Liste alle Herausforderungen auf"
+    join: "§7/challenge join <id> §f- Tritt einer Herausforderung bei"
+    leave: "§7/challenge leave §f- Verlasse deine aktuelle Herausforderung"
+    info: "§7/challenge info [id] §f- Zeige Informationen über eine Herausforderung"
+  list:
+    title: "§6Verfügbare Herausforderungen:"
+    format: "§7- §f%name% §7(%id%) §7- %status% §7- §f%player_count% Spieler"
+  info:
+    title: "§6Herausforderungsinfo: §f%name%"
+    id: "§7ID: §f%id%"
+    status: "§7Status: §f%status%"
+    world: "§7Welt: §f%world%"
+    players: "§7Spieler: §f%count%"
+    player_names: "§7Spielernamen: §f%names%"
+    duration: "§7Dauer: §f%time%"
+    completed_at: "§7Abgeschlossen am: §f%date%"
