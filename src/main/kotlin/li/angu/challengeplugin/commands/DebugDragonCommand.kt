@@ -57,7 +57,7 @@ class DebugDragonCommand(private val plugin: ChallengePluginPlugin) : CommandExe
                 }
 
                 // Set dragon health to 1
-                val maxHealth = dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.value ?: 200.0
+                val maxHealth = dragon.getAttribute(Attribute.MAX_HEALTH)?.value ?: 200.0
                 dragon.health = 1.0
 
                 // Find and destroy all end crystals

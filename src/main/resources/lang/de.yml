@@ -27,7 +27,8 @@ challenge:
   dragon_defeated_title: "§6Herausforderung Abgeschlossen!"
   dragon_defeated_subtitle: "§eDer Enderdrache wurde besiegt!"
   completed: "§aGlückwunsch! Die Herausforderung '§f%name%§a' wurde abgeschlossen!"
-  duration_display: "§e%time%"
+  duration_display: "§e§l%time%"
+  reconnected: "§aWillkommen zurück! Dein Inventar und deine Position in der Herausforderung '§f%name%§a' wurden wiederhergestellt."
 
 status:
   active: "§aAktiv"

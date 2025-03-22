@@ -111,6 +111,14 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         return activeChallenges[challengeId]
     }
 
+    /**
+     * Map a player to a challenge without resetting inventory or teleporting
+     * Used for reconnection logic
+     */
+    fun addPlayerToChallenge(playerId: UUID, challengeId: UUID) {
+        playerChallengeMap[playerId] = challengeId
+    }
+
     fun joinChallenge(player: Player, challenge: Challenge): Boolean {
         // Check if player is already in a challenge
         val currentChallenge = getPlayerChallenge(player)
@@ -121,7 +129,19 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             leaveChallenge(player)
         }
 
-        // Add player to challenge
+        // Check if player has saved data for this challenge
+        if (plugin.playerDataManager.hasPlayerData(player.uniqueId, challenge.id)) {
+            // Restore player data (inventory, location, etc.)
+            if (plugin.playerDataManager.restorePlayerData(player, challenge.id)) {
+                // Add player to challenge without resetting
+                if (challenge.addPlayer(player)) {
+                    playerChallengeMap[player.uniqueId] = challenge.id
+                    return true
+                }
+            }
+        }
+
+        // If no saved data or restore failed, add player normally
         if (challenge.addPlayer(player)) {
             playerChallengeMap[player.uniqueId] = challenge.id
 
@@ -139,8 +159,22 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     fun leaveChallenge(player: Player): Boolean {
         val challenge = getPlayerChallenge(player) ?: return false
 
+        // Note: Player data is now saved in the command handler
+        // to prevent duplicate saving
+
         if (challenge.removePlayer(player)) {
             playerChallengeMap.remove(player.uniqueId)
+
+            // Reset player state when leaving
+            player.inventory.clear()
+            player.activePotionEffects.forEach { effect ->
+                player.removePotionEffect(effect.type)
+            }
+            player.exp = 0f
+            player.level = 0
+            player.health = 20.0
+            player.foodLevel = 20
+            player.gameMode = org.bukkit.GameMode.CREATIVE
 
             // Teleport back to main world
             val mainWorld = Bukkit.getWorlds().firstOrNull()
@@ -175,7 +209,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val world = creator.createWorld() ?: return null
 
         // Set hardcore game rules
-        world.setGameRule(GameRule.NATURAL_REGENERATION, false)
+        // world.setGameRule(GameRule.NATURAL_REGENERATION, false) // only activate on real real hardcore
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
         world.difficulty = org.bukkit.Difficulty.HARD
@@ -187,7 +221,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val netherWorld = netherCreator.createWorld()
         if (netherWorld != null) {
             // Apply the same game rules to nether
-            netherWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
+            // netherWorld.setGameRule(GameRule.NATURAL_REGENERATION, false) // only activate on real real hardcore
             netherWorld.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
             netherWorld.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
             netherWorld.difficulty = org.bukkit.Difficulty.HARD
@@ -203,7 +237,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val endWorld = endCreator.createWorld()
         if (endWorld != null) {
             // Apply the same game rules to end
-            endWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
+            // endWorld.setGameRule(GameRule.NATURAL_REGENERATION, false) // only activate on real real hardcore
             endWorld.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
             endWorld.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
             endWorld.difficulty = org.bukkit.Difficulty.HARD
@@ -223,20 +257,20 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             } else {
                 Bukkit.getWorld(worldName)
             }
-            
+
             // Also load the associated nether and end worlds if they exist
             val netherName = "${worldName}_nether"
             if (Bukkit.getWorld(netherName) == null) {
                 val netherCreator = WorldCreator(netherName).environment(World.Environment.NETHER)
                 Bukkit.createWorld(netherCreator)
             }
-            
+
             val endName = "${worldName}_the_end"
             if (Bukkit.getWorld(endName) == null) {
                 val endCreator = WorldCreator(endName).environment(World.Environment.THE_END)
                 Bukkit.createWorld(endCreator)
             }
-            
+
             mainWorld
         } catch (e: Exception) {
             plugin.logger.warning("Failed to load world set $worldName: ${e.message}")

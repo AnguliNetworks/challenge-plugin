@@ -116,6 +116,9 @@ class ChallengeCommand(private val plugin: ChallengePluginPlugin) : CommandExecu
             return
         }
 
+        // Save player inventory, exp, health, etc. before leaving
+        plugin.playerDataManager.savePlayerData(player, challenge.id)
+
         if (plugin.challengeManager.leaveChallenge(player)) {
             player.sendMessage(plugin.languageManager.getMessage("challenge.left", player, "name" to challenge.name))
         } else {

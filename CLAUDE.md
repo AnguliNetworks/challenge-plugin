@@ -7,6 +7,10 @@
 - Clean build: `./gradlew clean build`
 - Build JAR: `./gradlew jar`
 
+## Development Workflow
+- Do not run build commands automatically after changes - let the user run them when ready to test
+- The user will handle testing in their Minecraft environment
+
 ## Code Style Guidelines
 - **Kotlin Style**: Follow standard Kotlin style conventions
 - **Indentation**: 4 spaces (no tabs)
