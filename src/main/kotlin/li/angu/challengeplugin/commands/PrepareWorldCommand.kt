@@ -14,27 +14,30 @@ class PrepareWorldCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
             return true
         }
         
-        // Check if there's a count argument
-        var count = 1
-        if (args.isNotEmpty()) {
-            try {
-                count = args[0].toInt()
-                if (count <= 0) {
-                    player.sendMessage("${ChatColor.RED}Count must be a positive number.")
-                    return true
-                }
-            } catch (e: NumberFormatException) {
-                player.sendMessage("${ChatColor.RED}Invalid number format. Usage: /challenge prepare [count]")
-                return true
-            }
-        }
-        
         // Get access to the WorldPreparationManager
         val worldManager = plugin.challengeManager.getWorldPreparationManager()
         
         // Show current world count
         val currentCount = worldManager.countAvailableWorlds()
         player.sendMessage("${ChatColor.GREEN}Currently have $currentCount pregenerated worlds available.")
+        
+        // If no arguments provided, just show the count and exit
+        if (args.isEmpty()) {
+            return true
+        }
+        
+        // Parse the count argument
+        var count = 1
+        try {
+            count = args[0].toInt()
+            if (count <= 0) {
+                player.sendMessage("${ChatColor.RED}Count must be a positive number.")
+                return true
+            }
+        } catch (e: NumberFormatException) {
+            player.sendMessage("${ChatColor.RED}Invalid number format. Usage: /prepare [count]")
+            return true
+        }
         
         // Start generation
         player.sendMessage("${ChatColor.YELLOW}Starting generation of $count world(s)...")
@@ -49,7 +52,10 @@ class PrepareWorldCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
     
     private fun generateNextWorld(player: Player, worldManager: WorldPreparationManager, generated: Int, total: Int) {
         if (generated >= total) {
+            // After finishing, show updated count
+            val currentCount = worldManager.countAvailableWorlds()
             player.sendMessage("${ChatColor.GREEN}All $total worlds have been prepared successfully!")
+            player.sendMessage("${ChatColor.GREEN}Now have $currentCount pregenerated worlds available.")
             return
         }
         
@@ -64,6 +70,9 @@ class PrepareWorldCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
                     generateNextWorld(player, worldManager, currentNum, total)
                 } else {
                     player.sendMessage("${ChatColor.RED}Failed to generate world $currentNum/$total. Stopping generation.")
+                    // Show current count after failure
+                    val currentCount = worldManager.countAvailableWorlds()
+                    player.sendMessage("${ChatColor.GREEN}Currently have $currentCount pregenerated worlds available.")
                 }
             })
         }

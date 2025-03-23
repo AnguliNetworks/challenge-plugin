@@ -52,7 +52,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         challengeSettingsManager = ChallengeSettingsManager(this)
         challengeMenuManager = ChallengeMenuManager(this)
         worldPreparationManager = WorldPreparationManager(this)
-        
+
         // Initialize lobby manager
         lobbyManager = LobbyManager(this)
         lobbyManager.initialize()
@@ -67,7 +67,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         registerCommand("delete", DeleteCommand(this))
         registerCommand("challenge", ChallengeCommand(this))
         registerCommand("prepare", PrepareWorldCommand(this))
-        
+
         // Lobby commands
         registerCommand("lobby", LobbyCommand(this))
         registerCommand("setlobby", SetLobbyCommand(this))
@@ -91,20 +91,12 @@ open class ChallengePluginPlugin : JavaPlugin() {
         TimerTask.startTimer(this)
 
         logger.info(languageManager.getMessage("plugin.enabled"))
-        
-        // Teleport existing players to lobby
-        server.onlinePlayers.forEach { player ->
-            // Only teleport players who aren't in challenges
-            if (challengeManager.getPlayerChallenge(player) == null) {
-                lobbyManager.teleportToLobby(player)
-            }
-        }
     }
 
     override open fun onDisable() {
         // Save any active challenges
         challengeManager.saveActiveChallenges()
-        
+
         // Save randomizer mappings
         blockDropListener.saveRandomizerMappings()
 

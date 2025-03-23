@@ -49,8 +49,10 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
             }
         }
         
-        // If no challenge was found, teleport player to the lobby
+        // If no challenge was found, teleport player to the lobby (no need to leave challenge)
         plugin.lobbyManager.teleportToLobby(player)
+        // Send welcome message
+        player.sendMessage(plugin.languageManager.getMessage("lobby.welcome", player))
     }
     
     @EventHandler

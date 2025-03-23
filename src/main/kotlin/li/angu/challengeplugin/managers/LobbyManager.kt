@@ -88,22 +88,20 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
 
     /**
      * Teleport a player to the lobby and set their gamemode to creative
+     * Note: This method does not automatically leave challenges - that should be handled
+     * by the calling code if needed.
      */
     fun teleportToLobby(player: Player) {
-        // If player is in a challenge, leave it first
-        val challenge = plugin.challengeManager.getPlayerChallenge(player)
-        if (challenge != null) {
-            plugin.challengeManager.leaveChallenge(player)
-        }
-
         // Teleport to lobby spawn
         lobbySpawnLocation?.let { spawn ->
             player.teleport(spawn)
             player.gameMode = GameMode.CREATIVE
             setupLobbyInventory(player)
             
-            // Send welcome message
-            player.sendMessage(plugin.languageManager.getMessage("lobby.welcome", player))
+            // Send welcome message only for new players
+            if (player.hasPlayedBefore().not()) {
+                player.sendMessage(plugin.languageManager.getMessage("lobby.welcome", player))
+            }
         } ?: run {
             plugin.logger.warning("Attempted to teleport ${player.name} to lobby but spawn location is not set")
         }

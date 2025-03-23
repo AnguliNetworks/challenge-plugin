@@ -54,7 +54,7 @@ commands:
     usage: /debugspawn <world_name>
     permission: challengeplugin.debug
   prepare:
-    description: Pre-generate worlds for challenges
+    description: Pre-generate worlds for challenges or show available pre-generated worlds
     usage: /prepare [count]
     permission: challengeplugin.prepare
 permissions:

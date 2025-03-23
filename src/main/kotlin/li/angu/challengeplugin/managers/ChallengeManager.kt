@@ -240,9 +240,20 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     private fun unloadWorld(worldName: String): Boolean {
         val world = Bukkit.getWorld(worldName) ?: return true
         
-        // Teleport any players out of this world to the lobby
+        // For each player in the world, leave challenge and teleport to lobby
         world.players.forEach { player ->
+            val challenge = getPlayerChallenge(player)
+            if (challenge != null) {
+                // Save player data before leaving
+                plugin.playerDataManager.savePlayerData(player, challenge.id)
+                
+                // Leave the challenge
+                leaveChallenge(player)
+            }
+            
+            // Teleport to lobby
             plugin.lobbyManager.teleportToLobby(player)
+            player.sendMessage(plugin.languageManager.getMessage("lobby.teleported", player))
         }
         
         // Unload the world

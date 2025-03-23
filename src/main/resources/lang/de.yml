@@ -112,7 +112,7 @@ command:
     leave: "§7/leave §f- Verlasse deine aktuelle Herausforderung"
     info: "§7/info [id] §f- Zeige Informationen über eine Herausforderung"
     delete: "§7/delete <id> §f- Lösche eine Herausforderung und ihre Welten"
-    prepare: "§7/prepare [anzahl] §f- Generiere Welten für Herausforderungen vor"
+    prepare: "§7/prepare [anzahl] §f- Generiere Welten für Herausforderungen vor oder zeige verfügbare Welten"
     lobby: "§7/lobby §f- Zur Lobby teleportieren"
     setlobby: "§7/setlobby §f- Setze den Lobby-Spawnpunkt"
   list:

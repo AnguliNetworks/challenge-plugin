@@ -112,7 +112,7 @@ command:
     leave: "§7/leave §f- Leave your current challenge"
     info: "§7/info [id] §f- Show info about a challenge"
     delete: "§7/delete <id> §f- Delete a challenge and its worlds"
-    prepare: "§7/prepare [count] §f- Pre-generate worlds for challenges"
+    prepare: "§7/prepare [count] §f- Pre-generate worlds for challenges or show available worlds"
     lobby: "§7/lobby §f- Teleport to the lobby"
     setlobby: "§7/setlobby §f- Set the lobby spawn point"
   list:
