@@ -29,25 +29,25 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
         // Load saved lobby location if available
         if (lobbyConfigFile.exists()) {
             val config = YamlConfiguration.loadConfiguration(lobbyConfigFile)
-            
+
             val worldName = config.getString("world")
             val x = config.getDouble("x")
             val y = config.getDouble("y")
             val z = config.getDouble("z")
-            val yaw = config.getFloat("yaw")
-            val pitch = config.getFloat("pitch")
-            
+            val yaw = config.getDouble("yaw")
+            val pitch = config.getDouble("pitch")
+
             if (worldName != null) {
                 val world = plugin.server.getWorld(worldName)
                 if (world != null) {
-                    lobbySpawnLocation = Location(world, x, y, z, yaw, pitch)
+                    lobbySpawnLocation = Location(world, x, y, z, yaw.toFloat(), pitch.toFloat())
                     plugin.logger.info("Loaded lobby spawn from config: $worldName: $x, $y, $z")
                 } else {
                     plugin.logger.warning("Couldn't find world '$worldName' for lobby spawn")
                 }
             }
         }
-        
+
         // If no lobby location was loaded, use the main world spawn
         if (lobbySpawnLocation == null) {
             val mainWorld = plugin.server.worlds.first()
@@ -61,7 +61,7 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
      */
     fun setLobbySpawn(location: Location) {
         lobbySpawnLocation = location.clone()
-        
+
         // Save to config
         val config = YamlConfiguration()
         config.set("world", location.world?.name)
@@ -70,7 +70,7 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
         config.set("z", location.z)
         config.set("yaw", location.yaw)
         config.set("pitch", location.pitch)
-        
+
         try {
             config.save(lobbyConfigFile)
             plugin.logger.info("Lobby spawn set and saved to: ${location.world?.name}: ${location.x}, ${location.y}, ${location.z}")
@@ -92,12 +92,18 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
      * by the calling code if needed.
      */
     fun teleportToLobby(player: Player) {
+        // If player is in a challenge, leave it first
+        val challenge = plugin.challengeManager.getPlayerChallenge(player)
+        if (challenge != null) {
+            plugin.challengeManager.leaveChallenge(player)
+        }
+
         // Teleport to lobby spawn
         lobbySpawnLocation?.let { spawn ->
             player.teleport(spawn)
             player.gameMode = GameMode.CREATIVE
             setupLobbyInventory(player)
-            
+
             // Send welcome message only for new players
             if (player.hasPlayedBefore().not()) {
                 player.sendMessage(plugin.languageManager.getMessage("lobby.welcome", player))
@@ -113,10 +119,10 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
     fun setupLobbyInventory(player: Player) {
         // Clear inventory
         player.inventory.clear()
-        
+
         // Create challenge menu star
         val menuItem = createMenuItem(player)
-        
+
         // Set to slot 1 (index 0)
         player.inventory.setItem(0, menuItem)
     }
@@ -127,16 +133,16 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
     fun createMenuItem(player: Player): ItemStack {
         val item = ItemStack(Material.NETHER_STAR)
         val meta = item.itemMeta ?: plugin.server.itemFactory.getItemMeta(Material.NETHER_STAR)
-        
+
         meta.setDisplayName(plugin.languageManager.getMessage("challenge.menu_item.name", player))
-        
+
         val lore = mutableListOf<String>()
         lore.add(plugin.languageManager.getMessage("challenge.menu_item.lore", player))
         meta.lore = lore
-        
+
         // Add a persistent data tag to identify this as our item
         meta.persistentDataContainer.set(menuItemKey, PersistentDataType.BYTE, 1)
-        
+
         item.itemMeta = meta
         return item
     }
@@ -146,7 +152,7 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
      */
     fun isMenuItem(item: ItemStack?): Boolean {
         if (item == null || item.type != Material.NETHER_STAR) return false
-        
+
         val meta = item.itemMeta ?: return false
         return meta.persistentDataContainer.has(menuItemKey, PersistentDataType.BYTE)
     }
