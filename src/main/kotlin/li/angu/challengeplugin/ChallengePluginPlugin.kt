@@ -6,6 +6,8 @@ import li.angu.challengeplugin.managers.ChallengeManager
 import li.angu.challengeplugin.managers.PlayerDataManager
 import li.angu.challengeplugin.managers.ChallengeSettingsManager
 import li.angu.challengeplugin.managers.ChallengeMenuManager
+import li.angu.challengeplugin.managers.LobbyManager
+import li.angu.challengeplugin.managers.WorldPreparationManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.listeners.PlayerConnectionListener
 import li.angu.challengeplugin.listeners.PlayerHealthListener
@@ -21,7 +23,9 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var playerDataManager: PlayerDataManager
     open lateinit var challengeSettingsManager: ChallengeSettingsManager
     open lateinit var challengeMenuManager: ChallengeMenuManager
+    open lateinit var lobbyManager: LobbyManager
     open lateinit var blockDropListener: BlockDropListener
+    open lateinit var worldPreparationManager: WorldPreparationManager
 
     /**
      * Helper method to register a command with its executor and tab completer
@@ -47,6 +51,11 @@ open class ChallengePluginPlugin : JavaPlugin() {
         challengeManager = ChallengeManager(this)
         challengeSettingsManager = ChallengeSettingsManager(this)
         challengeMenuManager = ChallengeMenuManager(this)
+        worldPreparationManager = WorldPreparationManager(this)
+        
+        // Initialize lobby manager
+        lobbyManager = LobbyManager(this)
+        lobbyManager.initialize()
 
         // Register commands
         // Main challenge commands
@@ -57,6 +66,11 @@ open class ChallengePluginPlugin : JavaPlugin() {
         registerCommand("info", InfoCommand(this))
         registerCommand("delete", DeleteCommand(this))
         registerCommand("challenge", ChallengeCommand(this))
+        registerCommand("prepare", PrepareWorldCommand(this))
+        
+        // Lobby commands
+        registerCommand("lobby", LobbyCommand(this))
+        registerCommand("setlobby", SetLobbyCommand(this))
 
         // Other commands
         registerCommand("lang", LanguageCommand(this))
@@ -77,6 +91,14 @@ open class ChallengePluginPlugin : JavaPlugin() {
         TimerTask.startTimer(this)
 
         logger.info(languageManager.getMessage("plugin.enabled"))
+        
+        // Teleport existing players to lobby
+        server.onlinePlayers.forEach { player ->
+            // Only teleport players who aren't in challenges
+            if (challengeManager.getPlayerChallenge(player) == null) {
+                lobbyManager.teleportToLobby(player)
+            }
+        }
     }
 
     override open fun onDisable() {

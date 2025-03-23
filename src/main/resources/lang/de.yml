@@ -9,6 +9,11 @@ language:
   changed: "§aSprache eingestellt auf: §f%lang%"
   not_available: "§cSprache nicht verfügbar: §f%lang%"
 
+lobby:
+  welcome: "§a§lWillkommen beim Herausforderungs-Server!"
+  teleported: "§aZur Lobby teleportiert."
+  spawn_set: "§aLobby-Spawn auf deine aktuelle Position gesetzt."
+
 challenge:
   created: "§aHerausforderung '%name%' erfolgreich erstellt!"
   join_command: "§7Nutze §f/join %id%§7 um beizutreten"
@@ -51,10 +56,18 @@ challenge:
     natural_regeneration: "§6Natürliche Regeneration"
     sync_hearts: "§cSynchronisierte Herzen"
     block_randomizer: "§dBlock Randomizer"
+    starter_kit: "§eStarterausrüstung"
     enabled: "§aAktiviert"
     disabled: "§cDeaktiviert"
     status: "§7Status: §f%status%"
     click_to_toggle: "§7Klicke zum Umschalten"
+    click_to_cycle: "§7Klicke um zu wechseln"
+    kit:
+      none: "§cKeine"
+      basic: "§aEinfach"
+      stone: "§aSteinausrüstung"
+      iron: "§bEisenausrüstung"
+      diamond: "§bDiamantausrüstung"
   menu:
     title: "§9§lHerausforderungen"
     create: "§a§lHerausforderung erstellen"
@@ -99,6 +112,9 @@ command:
     leave: "§7/leave §f- Verlasse deine aktuelle Herausforderung"
     info: "§7/info [id] §f- Zeige Informationen über eine Herausforderung"
     delete: "§7/delete <id> §f- Lösche eine Herausforderung und ihre Welten"
+    prepare: "§7/prepare [anzahl] §f- Generiere Welten für Herausforderungen vor"
+    lobby: "§7/lobby §f- Zur Lobby teleportieren"
+    setlobby: "§7/setlobby §f- Setze den Lobby-Spawnpunkt"
   list:
     title: "§6Verfügbare Herausforderungen:"
     format: "§7- §f%name% §7(%id%) §7- %status% §7- §f%player_count% Spieler"

@@ -8,13 +8,9 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
-import org.bukkit.inventory.ItemStack
-import org.bukkit.Material
-import org.bukkit.inventory.meta.ItemMeta
-import org.bukkit.NamespacedKey
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
 import java.util.UUID
 
 /**
@@ -22,8 +18,6 @@ import java.util.UUID
  * for challenges across sessions.
  */
 class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : Listener {
-    
-    private val menuItemKey = NamespacedKey(plugin, "challenge_menu_item")
     
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
@@ -55,10 +49,8 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
             }
         }
         
-        // If player is not in a challenge and is in the main world, give them the menu item
-        if (plugin.challengeManager.getPlayerChallenge(player) == null && isMainWorld(player.world.name)) {
-            giveMenuItemIfNeeded(player)
-        }
+        // If no challenge was found, teleport player to the lobby
+        plugin.lobbyManager.teleportToLobby(player)
     }
     
     @EventHandler
@@ -87,12 +79,14 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
         
         val challenge = plugin.challengeManager.getPlayerChallenge(player)
         
-        if (challenge == null && isMainWorld(toWorld.name)) {
-            // Player entered main world and is not in a challenge
-            giveMenuItemIfNeeded(player)
-        } else if (!isMainWorld(toWorld.name)) {
-            // Player left main world, remove menu item
-            removeMenuItem(player)
+        // Check if player entered the lobby world
+        if (plugin.lobbyManager.isLobbyWorld(toWorld.name)) {
+            // Check if the player isn't coming from a challenge world
+            if (challenge == null) {
+                // Set player to creative mode and give them the menu item
+                player.gameMode = org.bukkit.GameMode.CREATIVE
+                plugin.lobbyManager.setupLobbyInventory(player)
+            }
         }
     }
     
@@ -102,7 +96,8 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
         val item = event.item ?: return
         
         // Check if the item is our menu item
-        if (isMenuItem(item) && (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
+        if (plugin.lobbyManager.isMenuItem(item) && 
+            (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
             event.isCancelled = true
             
             // Open the menu
@@ -122,56 +117,5 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
             return true
         }
         return false
-    }
-    
-    private fun isMainWorld(worldName: String): Boolean {
-        // Typically the main world is named "world"
-        return worldName == "world" || worldName == plugin.server.worlds.first().name
-    }
-    
-    private fun giveMenuItemIfNeeded(player: Player) {
-        // Check if player already has the menu item
-        if (player.inventory.contents.any { isMenuItem(it) }) {
-            return
-        }
-        
-        // Create menu item
-        val menuItem = createMenuItem(player)
-        
-        // Give to player in the last hotbar slot
-        player.inventory.setItem(8, menuItem)
-    }
-    
-    private fun removeMenuItem(player: Player) {
-        // Find and remove menu item
-        player.inventory.contents.forEachIndexed { index, item ->
-            if (isMenuItem(item)) {
-                player.inventory.setItem(index, null)
-            }
-        }
-    }
-    
-    private fun createMenuItem(player: Player): ItemStack {
-        val item = ItemStack(Material.NETHER_STAR)
-        val meta = item.itemMeta ?: plugin.server.itemFactory.getItemMeta(Material.NETHER_STAR)
-        
-        meta.setDisplayName(plugin.languageManager.getMessage("challenge.menu_item.name", player))
-        
-        val lore = mutableListOf<String>()
-        lore.add(plugin.languageManager.getMessage("challenge.menu_item.lore", player))
-        meta.lore = lore
-        
-        // Add a persistent data tag to identify this as our item
-        meta.persistentDataContainer.set(menuItemKey, PersistentDataType.BYTE, 1)
-        
-        item.itemMeta = meta
-        return item
-    }
-    
-    private fun isMenuItem(item: ItemStack?): Boolean {
-        if (item == null || item.type != Material.NETHER_STAR) return false
-        
-        val meta = item.itemMeta ?: return false
-        return meta.persistentDataContainer.has(menuItemKey, PersistentDataType.BYTE)
     }
 }

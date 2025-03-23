@@ -79,6 +79,22 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
             player
         )
         inventory.setItem(12, blockRandomizerItem)
+        
+        // Add Starter Kit selection
+        val kitMaterial = when (challenge.settings.starterKit) {
+            li.angu.challengeplugin.models.StarterKit.NONE -> Material.BARRIER
+            li.angu.challengeplugin.models.StarterKit.BASIC -> Material.STONE_PICKAXE
+            li.angu.challengeplugin.models.StarterKit.STONE -> Material.LEATHER_CHESTPLATE
+            li.angu.challengeplugin.models.StarterKit.IRON -> Material.IRON_CHESTPLATE
+            li.angu.challengeplugin.models.StarterKit.DIAMOND -> Material.DIAMOND_CHESTPLATE
+        }
+        val starterKitItem = createCycleItem(
+            kitMaterial,
+            "starter_kit",
+            challenge.settings.starterKit.toString().lowercase(),
+            player
+        )
+        inventory.setItem(13, starterKitItem)
 
         // Add Start Challenge button
         val startItem = ItemStack(Material.DIAMOND_SWORD)
@@ -107,6 +123,22 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
             plugin.languageManager.getMessage("challenge.settings.status", player, "status" to
                 plugin.languageManager.getMessage("challenge.settings.$statusKey", player)),
             plugin.languageManager.getMessage("challenge.settings.click_to_toggle", player)
+        )
+
+        item.itemMeta = meta
+        return item
+    }
+    
+    private fun createCycleItem(material: Material, nameKey: String, value: String, player: Player): ItemStack {
+        val item = ItemStack(material)
+        val meta = item.itemMeta ?: Bukkit.getItemFactory().getItemMeta(material)
+
+        meta.setDisplayName(plugin.languageManager.getMessage("challenge.settings.$nameKey", player))
+
+        meta.lore = listOf(
+            plugin.languageManager.getMessage("challenge.settings.status", player, "status" to
+                plugin.languageManager.getMessage("challenge.settings.kit.$value", player)),
+            plugin.languageManager.getMessage("challenge.settings.click_to_cycle", player)
         )
 
         item.itemMeta = meta
@@ -176,6 +208,37 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
                 )
                 event.inventory.setItem(12, newItem)
 
+                player.playSound(player.location, "minecraft:ui.button.click", 1.0f, 1.0f)
+            }
+            
+            // Starter Kit cycle
+            13 -> {
+                // Cycle through the available kits
+                challenge.settings.starterKit = when (challenge.settings.starterKit) {
+                    li.angu.challengeplugin.models.StarterKit.NONE -> li.angu.challengeplugin.models.StarterKit.BASIC
+                    li.angu.challengeplugin.models.StarterKit.BASIC -> li.angu.challengeplugin.models.StarterKit.STONE
+                    li.angu.challengeplugin.models.StarterKit.STONE -> li.angu.challengeplugin.models.StarterKit.IRON
+                    li.angu.challengeplugin.models.StarterKit.IRON -> li.angu.challengeplugin.models.StarterKit.DIAMOND
+                    li.angu.challengeplugin.models.StarterKit.DIAMOND -> li.angu.challengeplugin.models.StarterKit.NONE
+                }
+                
+                // Update item to reflect new kit
+                val kitMaterial = when (challenge.settings.starterKit) {
+                    li.angu.challengeplugin.models.StarterKit.NONE -> Material.BARRIER
+                    li.angu.challengeplugin.models.StarterKit.BASIC -> Material.STONE_PICKAXE
+                    li.angu.challengeplugin.models.StarterKit.STONE -> Material.LEATHER_CHESTPLATE
+                    li.angu.challengeplugin.models.StarterKit.IRON -> Material.IRON_CHESTPLATE
+                    li.angu.challengeplugin.models.StarterKit.DIAMOND -> Material.DIAMOND_CHESTPLATE
+                }
+                
+                val newItem = createCycleItem(
+                    kitMaterial,
+                    "starter_kit",
+                    challenge.settings.starterKit.toString().lowercase(),
+                    player
+                )
+                event.inventory.setItem(13, newItem)
+                
                 player.playSound(player.location, "minecraft:ui.button.click", 1.0f, 1.0f)
             }
 

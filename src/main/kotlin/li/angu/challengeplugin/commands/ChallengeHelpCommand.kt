@@ -12,10 +12,19 @@ class ChallengeHelpCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) 
         player.sendMessage(plugin.languageManager.getMessage("command.help.join", player))
         player.sendMessage(plugin.languageManager.getMessage("command.help.leave", player))
         player.sendMessage(plugin.languageManager.getMessage("command.help.info", player))
+        player.sendMessage(plugin.languageManager.getMessage("command.help.lobby", player))
         
-        // Only show delete command if player has permission
+        // Only show admin commands if player has permission
         if (player.hasPermission("challengeplugin.delete")) {
             player.sendMessage(plugin.languageManager.getMessage("command.help.delete", player))
+        }
+        
+        if (player.hasPermission("challengeplugin.prepare")) {
+            player.sendMessage(plugin.languageManager.getMessage("command.help.prepare", player))
+        }
+        
+        if (player.hasPermission("challengeplugin.admin")) {
+            player.sendMessage(plugin.languageManager.getMessage("command.help.setlobby", player))
         }
         
         return true

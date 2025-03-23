@@ -7,6 +7,8 @@ import java.time.Instant
 import java.time.Duration
 import org.bukkit.GameMode
 import org.bukkit.GameRule
+import org.bukkit.Material
+import org.bukkit.inventory.ItemStack
 import li.angu.challengeplugin.utils.TimeFormatter
 
 enum class ChallengeStatus {
@@ -15,16 +17,25 @@ enum class ChallengeStatus {
     FAILED
 }
 
+enum class StarterKit {
+    NONE,
+    BASIC,    // Crafting table, logs, stone tools
+    STONE,    // Full stone gear, leather armor, food, crafting table, logs
+    IRON,     // Full iron gear and armor, basic supplies
+    DIAMOND   // Full diamond gear and armor, bow, golden apples, basic supplies
+}
+
 data class ChallengeSettings(
     var naturalRegeneration: Boolean = true,
     var syncHearts: Boolean = false,
-    var blockRandomizer: Boolean = false
+    var blockRandomizer: Boolean = false,
+    var starterKit: StarterKit = StarterKit.NONE
 )
 
 class Challenge(
     val id: UUID = UUID.randomUUID(),
     val name: String,
-    val worldName: String,
+    var worldName: String,
     val createdAt: Instant = Instant.now(),
     var status: ChallengeStatus = ChallengeStatus.ACTIVE,
     val players: MutableSet<UUID> = mutableSetOf(),
@@ -151,7 +162,112 @@ class Challenge(
         player.exp = 0f
         player.level = 0
         player.inventory.clear()
+        
+        // Give starter kit if enabled
+        when (settings.starterKit) {
+            StarterKit.BASIC -> giveBasicKit(player)
+            StarterKit.STONE -> giveStoneKit(player)
+            StarterKit.IRON -> giveIronKit(player)
+            StarterKit.DIAMOND -> giveDiamondKit(player)
+            StarterKit.NONE -> {} // No kit
+        }
+        
         player.teleport(world.spawnLocation)
+    }
+    
+    private fun giveBasicKit(player: Player) {
+        player.inventory.addItem(
+            ItemStack(Material.CRAFTING_TABLE, 1),
+            ItemStack(Material.OAK_LOG, 4),
+            ItemStack(Material.STONE_AXE, 1),
+            ItemStack(Material.STONE_PICKAXE, 1)
+        )
+    }
+    
+    private fun giveStoneKit(player: Player) {
+        // Stone tools
+        player.inventory.addItem(
+            ItemStack(Material.STONE_SWORD, 1),
+            ItemStack(Material.STONE_PICKAXE, 1),
+            ItemStack(Material.STONE_AXE, 1),
+            ItemStack(Material.STONE_SHOVEL, 1)
+        )
+        
+        // Leather armor
+        player.inventory.addItem(
+            ItemStack(Material.LEATHER_HELMET, 1),
+            ItemStack(Material.LEATHER_CHESTPLATE, 1),
+            ItemStack(Material.LEATHER_LEGGINGS, 1),
+            ItemStack(Material.LEATHER_BOOTS, 1)
+        )
+        
+        // Basic supplies
+        player.inventory.addItem(
+            ItemStack(Material.CRAFTING_TABLE, 1),
+            ItemStack(Material.OAK_LOG, 8),
+            ItemStack(Material.COOKED_BEEF, 8)
+        )
+    }
+    
+    private fun giveIronKit(player: Player) {
+        // Iron tools
+        player.inventory.addItem(
+            ItemStack(Material.IRON_SWORD, 1),
+            ItemStack(Material.IRON_PICKAXE, 1),
+            ItemStack(Material.IRON_AXE, 1),
+            ItemStack(Material.IRON_SHOVEL, 1)
+        )
+        
+        // Iron armor
+        player.inventory.addItem(
+            ItemStack(Material.IRON_HELMET, 1),
+            ItemStack(Material.IRON_CHESTPLATE, 1),
+            ItemStack(Material.IRON_LEGGINGS, 1),
+            ItemStack(Material.IRON_BOOTS, 1)
+        )
+        
+        // Basic supplies
+        player.inventory.addItem(
+            ItemStack(Material.CRAFTING_TABLE, 1),
+            ItemStack(Material.FURNACE, 1),
+            ItemStack(Material.OAK_LOG, 16),
+            ItemStack(Material.COOKED_BEEF, 16),
+            ItemStack(Material.TORCH, 16)
+        )
+    }
+    
+    private fun giveDiamondKit(player: Player) {
+        // Diamond tools
+        player.inventory.addItem(
+            ItemStack(Material.DIAMOND_SWORD, 1),
+            ItemStack(Material.DIAMOND_PICKAXE, 1),
+            ItemStack(Material.DIAMOND_AXE, 1),
+            ItemStack(Material.DIAMOND_SHOVEL, 1)
+        )
+        
+        // Diamond armor
+        player.inventory.addItem(
+            ItemStack(Material.DIAMOND_HELMET, 1),
+            ItemStack(Material.DIAMOND_CHESTPLATE, 1),
+            ItemStack(Material.DIAMOND_LEGGINGS, 1),
+            ItemStack(Material.DIAMOND_BOOTS, 1)
+        )
+        
+        // Bow and arrows
+        player.inventory.addItem(
+            ItemStack(Material.BOW, 1),
+            ItemStack(Material.ARROW, 64)
+        )
+        
+        // Golden apples and other supplies
+        player.inventory.addItem(
+            ItemStack(Material.GOLDEN_APPLE, 3),
+            ItemStack(Material.CRAFTING_TABLE, 1),
+            ItemStack(Material.FURNACE, 1),
+            ItemStack(Material.OAK_LOG, 32),
+            ItemStack(Material.COOKED_BEEF, 32),
+            ItemStack(Material.TORCH, 32)
+        )
     }
     
     fun applySettingsToWorld(world: World) {

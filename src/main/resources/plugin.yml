@@ -30,6 +30,13 @@ commands:
   lang:
     description: Change your preferred language
     usage: /lang <language>
+  lobby:
+    description: Teleport to the lobby
+    usage: /lobby
+  setlobby:
+    description: Set the lobby spawn point
+    usage: /setlobby
+    permission: challengeplugin.admin
   debugdragon:
     description: Debug command for the Ender Dragon
     usage: /debugdragon
@@ -46,10 +53,20 @@ commands:
     description: Teleport to a specific world's spawn point
     usage: /debugspawn <world_name>
     permission: challengeplugin.debug
+  prepare:
+    description: Pre-generate worlds for challenges
+    usage: /prepare [count]
+    permission: challengeplugin.prepare
 permissions:
   challengeplugin.debug:
     description: Access to debug commands
     default: op
   challengeplugin.delete:
     description: Permission to delete challenges
+    default: op
+  challengeplugin.prepare:
+    description: Permission to pre-generate worlds
+    default: op
+  challengeplugin.admin:
+    description: Permission for administrative commands
     default: op

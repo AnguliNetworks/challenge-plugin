@@ -17,6 +17,9 @@ class LeaveCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
 
         if (plugin.challengeManager.leaveChallenge(player)) {
             player.sendMessage(plugin.languageManager.getMessage("challenge.left", player, "name" to challenge.name))
+            
+            // Teleport player to the lobby
+            plugin.lobbyManager.teleportToLobby(player)
         } else {
             player.sendMessage(plugin.languageManager.getMessage("challenge.leave_failed", player))
         }

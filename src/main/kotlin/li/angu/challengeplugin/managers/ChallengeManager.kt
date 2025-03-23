@@ -21,6 +21,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     private val activeChallenges = ConcurrentHashMap<UUID, Challenge>()
     private val playerChallengeMap = ConcurrentHashMap<UUID, UUID>()
     private val dataFolder = File(plugin.dataFolder, "challenges")
+    private val worldPreparationManager = WorldPreparationManager(plugin)
 
     init {
         dataFolder.mkdirs()
@@ -131,7 +132,30 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     }
 
     fun finalizeChallenge(challenge: Challenge): Boolean {
-        // Create the world with the challenge settings
+        // Check if we have a pregenerated world available
+        val preparedWorldName = worldPreparationManager.getWorldForChallenge(challenge.id)
+        
+        if (preparedWorldName != null) {
+            // Update the challenge with the prepared world name
+            challenge.worldName = preparedWorldName
+            
+            // Load the prepared world
+            val world = loadWorld(preparedWorldName)
+            
+            // Apply challenge settings to the world
+            if (world != null) {
+                challenge.applySettingsToWorld(world)
+                
+                // Also apply settings to nether and end worlds
+                challenge.getNetherWorld()?.let { challenge.applySettingsToWorld(it) }
+                challenge.getEndWorld()?.let { challenge.applySettingsToWorld(it) }
+                
+                return true
+            }
+        }
+        
+        // If no prepared world is available or loading failed, create a new world
+        plugin.logger.info("No pregenerated world available, creating a new world for challenge ${challenge.id}")
         val world = createHardcoreWorld(challenge.worldName, challenge)
 
         return world != null
@@ -216,12 +240,9 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     private fun unloadWorld(worldName: String): Boolean {
         val world = Bukkit.getWorld(worldName) ?: return true
         
-        // Teleport any players out of this world
+        // Teleport any players out of this world to the lobby
         world.players.forEach { player ->
-            val mainWorld = Bukkit.getWorlds().firstOrNull()
-            if (mainWorld != null) {
-                player.teleport(mainWorld.spawnLocation)
-            }
+            plugin.lobbyManager.teleportToLobby(player)
         }
         
         // Unload the world
@@ -332,13 +353,9 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             player.level = 0
             player.health = 20.0
             player.foodLevel = 20
-            player.gameMode = org.bukkit.GameMode.CREATIVE
-
-            // Teleport back to main world
-            val mainWorld = Bukkit.getWorlds().firstOrNull()
-            if (mainWorld != null) {
-                player.teleport(mainWorld.spawnLocation)
-            }
+            
+            // Note: We no longer teleport or set gamemode here
+            // The LobbyManager will handle that instead
 
             return true
         }
@@ -425,6 +442,13 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         return world
     }
 
+    /**
+     * Exposes the WorldPreparationManager for commands to use
+     */
+    fun getWorldPreparationManager(): WorldPreparationManager {
+        return worldPreparationManager
+    }
+    
     private fun loadWorld(worldName: String): World? {
         return try {
             val mainWorld = if (Bukkit.getWorld(worldName) == null) {

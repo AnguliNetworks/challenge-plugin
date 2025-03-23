@@ -9,6 +9,11 @@ language:
   changed: "§aLanguage set to: §f%lang%"
   not_available: "§cLanguage not available: §f%lang%"
 
+lobby:
+  welcome: "§a§lWelcome to the Challenge Server!"
+  teleported: "§aTeleported to lobby."
+  spawn_set: "§aLobby spawn set to your current location."
+
 challenge:
   created: "§aChallenge '%name%' created successfully!"
   join_command: "§7Use §f/join %id%§7 to join it"
@@ -51,10 +56,18 @@ challenge:
     natural_regeneration: "§6Natural Regeneration"
     sync_hearts: "§cSync Hearts"
     block_randomizer: "§dBlock Randomizer"
+    starter_kit: "§eStarter Kit"
     enabled: "§aEnabled"
     disabled: "§cDisabled"
     status: "§7Status: §f%status%"
     click_to_toggle: "§7Click to toggle"
+    click_to_cycle: "§7Click to cycle through options"
+    kit:
+      none: "§cNone"
+      basic: "§aBasic"
+      stone: "§aStone Gear"
+      iron: "§bIron Gear"
+      diamond: "§bDiamond Gear"
   menu:
     title: "§9§lChallenges"
     create: "§a§lCreate Challenge"
@@ -99,6 +112,9 @@ command:
     leave: "§7/leave §f- Leave your current challenge"
     info: "§7/info [id] §f- Show info about a challenge"
     delete: "§7/delete <id> §f- Delete a challenge and its worlds"
+    prepare: "§7/prepare [count] §f- Pre-generate worlds for challenges"
+    lobby: "§7/lobby §f- Teleport to the lobby"
+    setlobby: "§7/setlobby §f- Set the lobby spawn point"
   list:
     title: "§6Available Challenges:"
     format: "§7- §f%name% §7(%id%) §7- %status% §7- §f%player_count% players"
