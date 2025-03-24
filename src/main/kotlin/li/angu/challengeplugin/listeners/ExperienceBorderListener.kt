@@ -3,7 +3,8 @@ package li.angu.challengeplugin.listeners
 import li.angu.challengeplugin.ChallengePluginPlugin
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerExpLevelChangeEvent
+import org.bukkit.event.player.PlayerExpChangeEvent
+import org.bukkit.event.player.PlayerLevelChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
 
@@ -21,7 +22,7 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
      * When a player's level changes, adjust the world border
      */
     @EventHandler
-    fun onPlayerLevelUp(event: PlayerExpLevelChangeEvent) {
+    fun onPlayerLevelUp(event: PlayerLevelChangeEvent) {
         val player = event.player
         val challenge = plugin.challengeManager.getPlayerChallenge(player) ?: return
         
@@ -34,11 +35,11 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
         // Get the player's current world
         val world = player.world
         
-        // Calculate new border size: starting with 3x3 (size = 3.0)
-        // and increasing by 1 in each direction per level (so +2 per level)
-        val newSize = 3.0 + (event.newLevel * 2.0)
+        // Get current border size and add 2
+        val currentSize = world.worldBorder.size
+        val newSize = currentSize + 2.0
         
-        // Set the border with some transition time (5 seconds)
+        // Set the border
         world.worldBorder.size = newSize
         
         // Send a message to players in the challenge
@@ -55,20 +56,16 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
     }
     
     /**
-     * When a player joins, make sure the border is set correctly based on highest level player
+     * When a player joins, don't modify the border
+     * Border only expands when players level up
      */
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
-        val player = event.player
-        val challenge = plugin.challengeManager.getPlayerChallenge(player) ?: return
-        
-        if (!challenge.settings.levelWorldBorder) return
-        
-        adjustWorldBorderForChallenge(challenge)
+        // No longer adjusting border on join - only increases on level up
     }
     
     /**
-     * When a player changes worlds, make sure the border is updated in the new world
+     * When a player changes worlds, initialize the border if needed
      */
     @EventHandler
     fun onPlayerChangeWorld(event: PlayerChangedWorldEvent) {
@@ -82,53 +79,36 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
             event.player.world.name == "${challenge.worldName}_nether" || 
             event.player.world.name == "${challenge.worldName}_the_end") {
             
-            // Set the border in the new world based on player's level
+            // Initialize the border in the new world if it's too small
             val world = event.player.world
-            val highestLevel = getHighestPlayerLevel(challenge)
-            val newSize = 3.0 + (highestLevel * 2.0)
-            
-            world.worldBorder.size = newSize
-        }
-    }
-    
-    /**
-     * Find the highest level among all players in a challenge
-     */
-    private fun getHighestPlayerLevel(challenge: li.angu.challengeplugin.models.Challenge): Int {
-        var highestLevel = 0
-        
-        challenge.players.forEach { playerId ->
-            val player = plugin.server.getPlayer(playerId)
-            if (player != null && player.level > highestLevel) {
-                highestLevel = player.level
+            if (world.worldBorder.size < 3.0) {
+                world.worldBorder.size = 3.0 // Initialize with minimum size
             }
         }
-        
-        return highestLevel
     }
     
     /**
-     * Adjust world border size for all worlds in a challenge based on highest player level
+     * Initialize world border size for all worlds in a challenge
+     * This method can be called when a challenge is created to set initial border
      */
-    private fun adjustWorldBorderForChallenge(challenge: li.angu.challengeplugin.models.Challenge) {
+    private fun initializeWorldBordersForChallenge(challenge: li.angu.challengeplugin.models.Challenge) {
         if (!challenge.settings.levelWorldBorder) return
         
-        val highestLevel = getHighestPlayerLevel(challenge)
-        val newSize = 3.0 + (highestLevel * 2.0)
+        val initialSize = 3.0 // Starting with 3x3 border
         
-        // Adjust main world
+        // Initialize main world
         plugin.server.getWorld(challenge.worldName)?.let { world ->
-            world.worldBorder.size = newSize
+            world.worldBorder.size = initialSize
         }
         
-        // Adjust nether
+        // Initialize nether
         challenge.getNetherWorld()?.let { world ->
-            world.worldBorder.size = newSize
+            world.worldBorder.size = initialSize
         }
         
-        // Adjust end
+        // Initialize end
         challenge.getEndWorld()?.let { world ->
-            world.worldBorder.size = newSize
+            world.worldBorder.size = initialSize
         }
     }
 }
