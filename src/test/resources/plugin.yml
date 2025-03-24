@@ -1,0 +1,72 @@
+name: ChallengePlugin
+version: 1.0-SNAPSHOT
+main: li.angu.challengeplugin.ChallengePluginPlugin
+api-version: 1.20
+description: A Minecraft challenge plugin with hardcore Ender Dragon fights
+author: li.angu
+commands:
+  create:
+    description: Create a new challenge
+    usage: /create [name]
+  list:
+    description: List all available challenges
+    usage: /list
+  join:
+    description: Join an existing challenge
+    usage: /join <challenge-id>
+  leave:
+    description: Leave your current challenge
+    usage: /leave
+  info:
+    description: Show information about a challenge
+    usage: /info [challenge-id]
+  delete:
+    description: Delete a challenge and its worlds
+    usage: /delete <challenge-id> [confirm]
+    permission: challengeplugin.delete
+  challenge:
+    description: Open the challenge menu
+    usage: /challenge
+  lang:
+    description: Change your preferred language
+    usage: /lang <language>
+  lobby:
+    description: Teleport to the lobby
+    usage: /lobby
+  setlobby:
+    description: Set the lobby spawn point
+    usage: /setlobby
+    permission: challengeplugin.admin
+  debugdragon:
+    description: Debug command for the Ender Dragon
+    usage: /debugdragon
+    permission: challengeplugin.debug
+  debugcolors:
+    description: Display all Minecraft chat colors and formats
+    usage: /debugcolors
+    permission: challengeplugin.debug
+  debugrespawn:
+    description: Teleport yourself or all players to their spawn points
+    usage: /debugrespawn [all]
+    permission: challengeplugin.debug
+  debugspawn:
+    description: Teleport to a specific world's spawn point
+    usage: /debugspawn <world_name>
+    permission: challengeplugin.debug
+  prepare:
+    description: Pre-generate worlds for challenges or show available pre-generated worlds
+    usage: /prepare [count]
+    permission: challengeplugin.prepare
+permissions:
+  challengeplugin.debug:
+    description: Access to debug commands
+    default: op
+  challengeplugin.delete:
+    description: Permission to delete challenges
+    default: op
+  challengeplugin.prepare:
+    description: Permission to pre-generate worlds
+    default: op
+  challengeplugin.admin:
+    description: Permission for administrative commands
+    default: op

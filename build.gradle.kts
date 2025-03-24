@@ -25,6 +25,8 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.10.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("com.github.seeseemelk:MockBukkit-v1.20:3.77.0")
+    testImplementation("org.yaml:snakeyaml:2.2")
+    testImplementation("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
 }
 
 tasks.test {

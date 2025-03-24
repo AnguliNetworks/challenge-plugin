@@ -1,0 +1,19 @@
+plugin:
+  enabled: "ChallengePlugin has been enabled!"
+  disabled: "ChallengePlugin has been disabled!"
+
+language:
+  current: "§aCurrent language: §f%lang%"
+  available: "§aAvailable languages: §f%languages%"
+  usage: "§aUse §f/lang <language> §ato change your language"
+  changed: "§aLanguage set to: §f%lang%"
+  not_available: "§cLanguage not available: §f%lang%"
+
+challenge:
+  created: "§aChallenge '%name%' created successfully!"
+  joined: "§aYou joined the challenge '§f%name%§a'"
+  left: "§aYou left the challenge '§f%name%§a'"
+
+status:
+  active: "§aActive"
+  completed: "§6Completed"
