@@ -13,6 +13,7 @@ import li.angu.challengeplugin.listeners.PlayerConnectionListener
 import li.angu.challengeplugin.listeners.PlayerHealthListener
 import li.angu.challengeplugin.listeners.BlockDropListener
 import li.angu.challengeplugin.listeners.PortalListener
+import li.angu.challengeplugin.listeners.ExperienceBorderListener
 import li.angu.challengeplugin.tasks.TimerTask
 import li.angu.challengeplugin.utils.LanguageManager
 
@@ -74,6 +75,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
 
         // Other commands
         registerCommand("lang", LanguageCommand(this))
+        registerCommand("pause", PauseCommand(this))
         registerCommand("debugdragon", DebugDragonCommand(this))
         registerCommand("debugcolors", DebugColorsCommand(this))
         registerCommand("debugrespawn", DebugRespawnCommand(this))
@@ -86,6 +88,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(PortalListener(this), this)
         blockDropListener = BlockDropListener(this)
         server.pluginManager.registerEvents(blockDropListener, this)
+        server.pluginManager.registerEvents(ExperienceBorderListener(this), this)
 
         // Start timer task for challenge duration display
         TimerTask.startTimer(this)

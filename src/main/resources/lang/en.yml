@@ -36,6 +36,7 @@ challenge:
   reconnected: "§aWelcome back! Your inventory and location in challenge '§f%name%§a' have been restored."
   create_cancelled: "§cChallenge creation cancelled."
   create_failed: "§cFailed to create challenge world."
+  border_expanded: "§a§lWorld border expanded to §f%size%x%size% §a§lblocks (Level §f%level%§a§l)"
   delete_no_permission: "§cYou don't have permission to delete challenges."
   deleted_successfully: "§aChallenge '§f%name%§a' has been deleted."
   delete_failed: "§cFailed to delete challenge."
@@ -56,6 +57,7 @@ challenge:
     natural_regeneration: "§6Natural Regeneration"
     sync_hearts: "§cSync Hearts"
     block_randomizer: "§dBlock Randomizer"
+    level_world_border: "§aLevel WorldBorder"
     starter_kit: "§eStarter Kit"
     enabled: "§aEnabled"
     disabled: "§cDisabled"
@@ -93,6 +95,12 @@ status:
 
 command:
   player_only: "§cThis command can only be used by players"
+  pause:
+    paused: "§6Challenge paused! Entities and timer stopped."
+    resumed: "§aChallenge resumed! Timer and entities are now active again."
+    status_paused: "§7Challenge is currently §cpaused§7."
+    status_active: "§7Challenge is currently §aactive§7."
+    usage: "§cUsage: /pause [resume]"
   debug:
     dragon_success: "§aTeleported to Ender Dragon! Set dragon health to 1 HP (of %max_health%). Destroyed %crystal_count% end crystals."
     dragon_waiting: "§7Teleported to End. Searching for Ender Dragon..."
@@ -115,6 +123,7 @@ command:
     prepare: "§7/prepare [count] §f- Pre-generate worlds for challenges or show available worlds"
     lobby: "§7/lobby §f- Teleport to the lobby"
     setlobby: "§7/setlobby §f- Set the lobby spawn point"
+    pause: "§7/pause [resume] §f- Pause or resume the current challenge"
   list:
     title: "§6Available Challenges:"
     format: "§7- §f%name% §7(%id%) §7- %status% §7- §f%player_count% players"

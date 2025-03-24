@@ -22,37 +22,15 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
-        val playerId = player.uniqueId
         
-        // Check if the player was in any active challenges
-        for (challenge in plugin.challengeManager.getActiveChallenges()) {
-            // Check if player data exists for this challenge
-            if (plugin.playerDataManager.hasPlayerData(playerId, challenge.id)) {
-                // Try to restore player data and automatically join the challenge
-                if (plugin.playerDataManager.restorePlayerData(player, challenge.id)) {
-                    // Update the challenge state to include this player again
-                    addPlayerToChallengeWithoutReset(player, challenge)
-                    
-                    // Send reconnection message
-                    player.sendMessage(
-                        plugin.languageManager.getMessage(
-                            "challenge.reconnected", 
-                            player, 
-                            "name" to challenge.name
-                        )
-                    )
-                    
-                    // We found and restored their data, so stop looking for more challenges
-                    // This prevents accidentally restoring data for multiple challenges
-                    return
-                }
-            }
-        }
-        
-        // If no challenge was found, teleport player to the lobby (no need to leave challenge)
+        // Always teleport player to the lobby first
         plugin.lobbyManager.teleportToLobby(player)
+        
         // Send welcome message
         player.sendMessage(plugin.languageManager.getMessage("lobby.welcome", player))
+        
+        // Note: We've removed the automatic challenge rejoining
+        // Players must now explicitly join their challenges using the menu
     }
     
     @EventHandler

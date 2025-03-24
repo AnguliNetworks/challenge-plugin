@@ -80,6 +80,15 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
         )
         inventory.setItem(12, blockRandomizerItem)
         
+        // Add Level WorldBorder toggle
+        val levelWorldBorderItem = createToggleItem(
+            if (challenge.settings.levelWorldBorder) Material.EXPERIENCE_BOTTLE else Material.BARRIER,
+            "level_world_border",
+            challenge.settings.levelWorldBorder,
+            player
+        )
+        inventory.setItem(13, levelWorldBorderItem)
+        
         // Add Starter Kit selection
         val kitMaterial = when (challenge.settings.starterKit) {
             li.angu.challengeplugin.models.StarterKit.NONE -> Material.BARRIER
@@ -94,7 +103,7 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
             challenge.settings.starterKit.toString().lowercase(),
             player
         )
-        inventory.setItem(13, starterKitItem)
+        inventory.setItem(14, starterKitItem)
 
         // Add Start Challenge button
         val startItem = ItemStack(Material.DIAMOND_SWORD)
@@ -102,7 +111,7 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
         startMeta.setDisplayName(plugin.languageManager.getMessage("challenge.settings.start", player))
         startMeta.lore = listOf(plugin.languageManager.getMessage("challenge.settings.start_lore", player))
         startItem.itemMeta = startMeta
-        inventory.setItem(15, startItem)
+        inventory.setItem(16, startItem)
 
         // Store the relationship between player and challenge
         pendingChallenges[player.uniqueId] = challenge
@@ -211,8 +220,24 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
                 player.playSound(player.location, "minecraft:ui.button.click", 1.0f, 1.0f)
             }
             
-            // Starter Kit cycle
+            // Level WorldBorder toggle
             13 -> {
+                challenge.settings.levelWorldBorder = !challenge.settings.levelWorldBorder
+
+                // Update item to reflect new setting
+                val newItem = createToggleItem(
+                    if (challenge.settings.levelWorldBorder) Material.EXPERIENCE_BOTTLE else Material.BARRIER,
+                    "level_world_border",
+                    challenge.settings.levelWorldBorder,
+                    player
+                )
+                event.inventory.setItem(13, newItem)
+
+                player.playSound(player.location, "minecraft:ui.button.click", 1.0f, 1.0f)
+            }
+            
+            // Starter Kit cycle
+            14 -> {
                 // Cycle through the available kits
                 challenge.settings.starterKit = when (challenge.settings.starterKit) {
                     li.angu.challengeplugin.models.StarterKit.NONE -> li.angu.challengeplugin.models.StarterKit.BASIC
@@ -243,7 +268,7 @@ class ChallengeSettingsManager(private val plugin: ChallengePluginPlugin) : List
             }
 
             // Start Challenge button
-            15 -> {
+            16 -> {
                 // Mark this challenge as started before closing inventory
                 startedChallenges[player.uniqueId] = true
                 

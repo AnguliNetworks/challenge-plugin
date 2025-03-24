@@ -36,6 +36,7 @@ challenge:
   reconnected: "§aWillkommen zurück! Dein Inventar und deine Position in der Herausforderung '§f%name%§a' wurden wiederhergestellt."
   create_cancelled: "§cErstellung der Herausforderung abgebrochen."
   create_failed: "§cErstellung der Herausforderungswelt fehlgeschlagen."
+  border_expanded: "§a§lWeltgrenze erweitert auf §f%size%x%size% §a§lBlöcke (Level §f%level%§a§l)"
   delete_no_permission: "§cDu hast keine Berechtigung, Herausforderungen zu löschen."
   deleted_successfully: "§aHerausforderung '§f%name%§a' wurde gelöscht."
   delete_failed: "§cLöschen der Herausforderung fehlgeschlagen."
@@ -56,6 +57,7 @@ challenge:
     natural_regeneration: "§6Natürliche Regeneration"
     sync_hearts: "§cSynchronisierte Herzen"
     block_randomizer: "§dBlock Randomizer"
+    level_world_border: "§aLevel-Weltgrenze"
     starter_kit: "§eStarterausrüstung"
     enabled: "§aAktiviert"
     disabled: "§cDeaktiviert"
@@ -93,6 +95,12 @@ status:
 
 command:
   player_only: "§cDieser Befehl kann nur von Spielern verwendet werden"
+  pause:
+    paused: "§6Herausforderung pausiert! Entities und Timer gestoppt."
+    resumed: "§aHerausforderung fortgesetzt! Timer und Entities sind wieder aktiv."
+    status_paused: "§7Herausforderung ist aktuell §cpausiert§7."
+    status_active: "§7Herausforderung ist aktuell §aaktiv§7."
+    usage: "§cVerwendung: /pause [resume]"
   debug:
     dragon_success: "§aZum Enderdrachen teleportiert! Drachengesundheit auf 1 HP (von %max_health%) gesetzt. %crystal_count% Endkristalle zerstört."
     dragon_waiting: "§7Zum End teleportiert. Suche nach dem Enderdrachen..."
@@ -115,6 +123,7 @@ command:
     prepare: "§7/prepare [anzahl] §f- Generiere Welten für Herausforderungen vor oder zeige verfügbare Welten"
     lobby: "§7/lobby §f- Zur Lobby teleportieren"
     setlobby: "§7/setlobby §f- Setze den Lobby-Spawnpunkt"
+    pause: "§7/pause [resume] §f- Pausiere oder setze die aktuelle Herausforderung fort"
   list:
     title: "§6Verfügbare Herausforderungen:"
     format: "§7- §f%name% §7(%id%) §7- %status% §7- §f%player_count% Spieler"

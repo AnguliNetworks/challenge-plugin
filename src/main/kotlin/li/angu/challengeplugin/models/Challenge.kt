@@ -29,7 +29,8 @@ data class ChallengeSettings(
     var naturalRegeneration: Boolean = true,
     var syncHearts: Boolean = false,
     var blockRandomizer: Boolean = false,
-    var starterKit: StarterKit = StarterKit.NONE
+    var starterKit: StarterKit = StarterKit.NONE,
+    var levelWorldBorder: Boolean = false
 )
 
 class Challenge(
@@ -275,6 +276,16 @@ class Challenge(
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
         world.difficulty = org.bukkit.Difficulty.HARD
+        
+        // Apply Level WorldBorder setting if enabled
+        if (settings.levelWorldBorder) {
+            // Start with a small 3x3 border
+            world.worldBorder.size = 3.0
+            world.worldBorder.center = world.spawnLocation
+        } else {
+            // Use default world border (30,000,000 blocks)
+            world.worldBorder.reset()
+        }
     }
     
     /**

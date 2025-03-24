@@ -57,6 +57,9 @@ commands:
     description: Pre-generate worlds for challenges or show available pre-generated worlds
     usage: /prepare [count]
     permission: challengeplugin.prepare
+  pause:
+    description: Pause or resume the current challenge
+    usage: /pause [resume]
 permissions:
   challengeplugin.debug:
     description: Access to debug commands

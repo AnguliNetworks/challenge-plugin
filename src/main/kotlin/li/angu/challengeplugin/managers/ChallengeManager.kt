@@ -38,7 +38,8 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                 val settings = ChallengeSettings(
                     naturalRegeneration = config.getBoolean("settings.naturalRegeneration", true),
                     syncHearts = config.getBoolean("settings.syncHearts", false),
-                    blockRandomizer = config.getBoolean("settings.blockRandomizer", false)
+                    blockRandomizer = config.getBoolean("settings.blockRandomizer", false),
+                    levelWorldBorder = config.getBoolean("settings.levelWorldBorder", false)
                 )
 
                 val challenge = Challenge(
@@ -113,6 +114,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             config.set("settings.naturalRegeneration", challenge.settings.naturalRegeneration)
             config.set("settings.syncHearts", challenge.settings.syncHearts)
             config.set("settings.blockRandomizer", challenge.settings.blockRandomizer)
+            config.set("settings.levelWorldBorder", challenge.settings.levelWorldBorder)
 
             config.save(file)
         }
