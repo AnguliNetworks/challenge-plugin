@@ -89,10 +89,9 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(PortalListener(this), this)
         blockDropListener = BlockDropListener(this)
         server.pluginManager.registerEvents(blockDropListener, this)
-        
+
         // Create and register the ExperienceBorderListener
         experienceBorderListener = ExperienceBorderListener(this)
-        server.pluginManager.registerEvents(experienceBorderListener, this)
 
         // Start timer task for challenge duration display
         TimerTask.startTimer(this)

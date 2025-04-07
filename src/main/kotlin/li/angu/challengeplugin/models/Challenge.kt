@@ -30,7 +30,8 @@ data class ChallengeSettings(
     var syncHearts: Boolean = false,
     var blockRandomizer: Boolean = false,
     var starterKit: StarterKit = StarterKit.NONE,
-    var levelWorldBorder: Boolean = false
+    var levelWorldBorder: Boolean = false,
+    var borderSize: Double = 3.0 // Initial border size of 3 blocks
 )
 
 class Challenge(
