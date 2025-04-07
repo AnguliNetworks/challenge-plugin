@@ -33,10 +33,10 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
         plugin.server.pluginManager.registerEvents(this, plugin)
         
         // Start a repeating task to update borders for all players
-        // This is necessary because Minecraft doesn't support per-player borders natively
+        // We only need to update occasionally since we're storing per-player borders
         borderUpdateTask = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
             updateAllPlayerBorders()
-        }, 10L, 5L) // Update every 5 ticks (1/4 second)
+        }, 10L, 20L) // Update every 20 ticks (1 second)
     }
     
     /**
@@ -53,26 +53,38 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
         }
     }
     
+    // Store a world border for each world to avoid recreating it
+    private val worldBorders = mutableMapOf<String, WorldBorder>()
+    
     /**
      * Update a single player's border
      */
     private fun updatePlayerBorder(player: Player, size: Double, center: Location) {
-        // We need to temporarily modify the world border for the player
-        // We need to save the original values first
-        val worldBorder = player.world.worldBorder
-        val originalSize = worldBorder.size
-        val originalCenter = worldBorder.center.clone()
-        
-        // Set new values
-        worldBorder.size = size
-        worldBorder.center = center
-        
-        // The player will see this border now
-        // We need to quickly reset it back to avoid affecting other players
-        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-            worldBorder.size = originalSize
-            worldBorder.center = originalCenter
-        }, 1L)
+        try {
+            val world = player.world
+            
+            // Create a custom WorldBorder object for each world if it doesn't exist
+            val worldBorder = worldBorders.computeIfAbsent(world.name) { 
+                // Create a new WorldBorder directly
+                val border = Bukkit.createWorldBorder()
+                // Set this to be very far away and very large by default
+                border.center = Location(world, 0.0, 0.0, 0.0)
+                border.size = 60000000.0 // Nearly unlimited
+                border
+            }
+            
+            // Only update if necessary
+            if (worldBorder.size != size || worldBorder.center != center) {
+                worldBorder.size = size
+                worldBorder.center = center
+            }
+            
+            // Send the border to the player without changing the world's actual border
+            player.worldBorder = worldBorder
+        } catch (e: Exception) {
+            // Log any errors but don't crash the plugin
+            plugin.logger.warning("Error updating border for player ${player.name}: ${e.message}")
+        }
     }
 
     /**
@@ -94,6 +106,13 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
         
         // Update the size in our map
         challengeBorderSizes[challenge.id] = newSize
+        
+        // Update borders for all players in this challenge immediately
+        challenge.players.forEach { playerId ->
+            plugin.server.getPlayer(playerId)?.let { challengePlayer ->
+                updatePlayerBorder(challengePlayer, newSize, challengePlayer.world.spawnLocation)
+            }
+        }
         
         // Send a message to players in the challenge
         val message = plugin.languageManager.getMessage(
@@ -118,7 +137,9 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
         
         if (!challenge.settings.levelWorldBorder) return
         
-        // The border will be updated by the repeating task
+        // Immediately update the border for the player
+        val borderSize = challengeBorderSizes[challenge.id] ?: calculateBorderSize(challenge)
+        updatePlayerBorder(player, borderSize, player.world.spawnLocation)
     }
     
     /**
@@ -131,7 +152,9 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
         
         if (!challenge.settings.levelWorldBorder) return
         
-        // The border will be updated by the repeating task with the correct center
+        // Immediately update the border for the player in the new world
+        val borderSize = challengeBorderSizes[challenge.id] ?: calculateBorderSize(challenge)
+        updatePlayerBorder(player, borderSize, player.world.spawnLocation)
     }
     
     /**
