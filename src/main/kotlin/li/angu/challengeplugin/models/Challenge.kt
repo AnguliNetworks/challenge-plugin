@@ -30,7 +30,8 @@ data class ChallengeSettings(
     var syncHearts: Boolean = false,
     var blockRandomizer: Boolean = false,
     var starterKit: StarterKit = StarterKit.NONE,
-    var levelWorldBorder: Boolean = false
+    var levelWorldBorder: Boolean = false,
+    var borderSize: Double = 3.0 // Initial border size of 3 blocks
 )
 
 class Challenge(
@@ -277,15 +278,10 @@ class Challenge(
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
         world.difficulty = org.bukkit.Difficulty.HARD
         
-        // Apply Level WorldBorder setting if enabled
-        if (settings.levelWorldBorder) {
-            // Start with a small 3x3 border
-            world.worldBorder.size = 3.0
-            world.worldBorder.center = world.spawnLocation
-        } else {
-            // Use default world border (30,000,000 blocks)
-            world.worldBorder.reset()
-        }
+        // For levelWorldBorder:
+        // We don't modify the world's border directly anymore
+        // Instead, individual player borders are managed by the ExperienceBorderListener
+        // This allows mobs to spawn outside the visible border, fixing the issue
     }
     
     /**

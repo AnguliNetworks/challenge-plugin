@@ -3,19 +3,84 @@ package li.angu.challengeplugin.listeners
 import li.angu.challengeplugin.ChallengePluginPlugin
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerExpChangeEvent
 import org.bukkit.event.player.PlayerLevelChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.WorldBorder
+import org.bukkit.entity.Player
+import org.bukkit.scheduler.BukkitTask
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * This listener manages the world border adjustment based on player experience level
  * when the Level WorldBorder setting is enabled.
+ *
+ * This implementation simulates per-player borders by repeatedly updating the world border
+ * for each player, making it appear as if they have individual borders.
  */
 class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : Listener {
 
+    // Border update task
+    private var borderUpdateTask: BukkitTask? = null
+
     init {
         plugin.server.pluginManager.registerEvents(this, plugin)
+
+        // Start a repeating task to update borders for all players
+        // We only need to update occasionally since we're storing per-player borders
+        borderUpdateTask = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
+            updateAllPlayerBorders()
+        }, 10L, 20L) // Update every 20 ticks (1 second)
+    }
+
+    /**
+     * Update borders for all online players in challenges
+     */
+    private fun updateAllPlayerBorders() {
+        Bukkit.getOnlinePlayers().forEach { player ->
+            val challenge = plugin.challengeManager.getPlayerChallenge(player) ?: return@forEach
+
+            if (!challenge.settings.levelWorldBorder) return@forEach
+
+            updatePlayerBorder(player, challenge.settings.borderSize, player.world.spawnLocation)
+        }
+    }
+
+    // Store a world border for each world to avoid recreating it
+    private val worldBorders = mutableMapOf<String, WorldBorder>()
+
+    /**
+     * Update a single player's border
+     */
+    private fun updatePlayerBorder(player: Player, size: Double, center: Location) {
+        try {
+            val world = player.world
+
+            // Create a custom WorldBorder object for each world if it doesn't exist
+            val worldBorder = worldBorders.computeIfAbsent(world.name) {
+                // Create a new WorldBorder directly
+                val border = Bukkit.createWorldBorder()
+                // Set this to be very far away and very large by default
+                border.center = Location(world, 0.0, 0.0, 0.0)
+                border.size = 60000000.0 // Nearly unlimited
+                border
+            }
+
+            // Only update if necessary
+            if (worldBorder.size != size || worldBorder.center != center) {
+                worldBorder.size = size
+                worldBorder.center = center
+            }
+
+            // Send the border to the player without changing the world's actual border
+            player.worldBorder = worldBorder
+        } catch (e: Exception) {
+            // Log any errors but don't crash the plugin
+            plugin.logger.warning("Error updating border for player ${player.name}: ${e.message}")
+        }
     }
 
     /**
@@ -25,90 +90,73 @@ class ExperienceBorderListener(private val plugin: ChallengePluginPlugin) : List
     fun onPlayerLevelUp(event: PlayerLevelChangeEvent) {
         val player = event.player
         val challenge = plugin.challengeManager.getPlayerChallenge(player) ?: return
-        
+
         // Check if the level world border setting is enabled for this challenge
         if (!challenge.settings.levelWorldBorder) return
-        
+
         // Only apply when level increases (not when it decreases)
         if (event.newLevel <= event.oldLevel) return
-        
-        // Get the player's current world
-        val world = player.world
-        
-        // Get current border size and add 2
-        val currentSize = world.worldBorder.size
-        val newSize = currentSize + 2.0
-        
-        // Set the border
-        world.worldBorder.size = newSize
-        
-        // Send a message to players in the challenge
-        val message = plugin.languageManager.getMessage(
-            "challenge.border_expanded", 
-            player, 
-            "level" to event.newLevel.toString(),
-            "size" to newSize.toInt().toString()
-        )
-        
+
+        // Increase border by 1 block on each level up (+2 blocks total diameter)
+        challenge.settings.borderSize += 2.0
+
+        // Save all challenges to persist the border size
+        plugin.challengeManager.saveActiveChallenges()
+
+        // Update borders for all players in this challenge immediately
         challenge.players.forEach { playerId ->
-            plugin.server.getPlayer(playerId)?.sendMessage(message)
+            plugin.server.getPlayer(playerId)?.let { challengePlayer ->
+                updatePlayerBorder(challengePlayer, challenge.settings.borderSize, challengePlayer.world.spawnLocation)
+            }
         }
     }
-    
+
     /**
-     * When a player joins, don't modify the border
-     * Border only expands when players level up
+     * When a player joins, initialize their border
      */
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
-        // No longer adjusting border on join - only increases on level up
+        val player = event.player
+        val challenge = plugin.challengeManager.getPlayerChallenge(player) ?: return
+
+        if (!challenge.settings.levelWorldBorder) return
+
+        // Immediately update the border for the player using the challenge's saved border size
+        updatePlayerBorder(player, challenge.settings.borderSize, player.world.spawnLocation)
     }
-    
+
     /**
-     * When a player changes worlds, initialize the border if needed
+     * When a player changes worlds, update their border center
      */
     @EventHandler
     fun onPlayerChangeWorld(event: PlayerChangedWorldEvent) {
         val player = event.player
         val challenge = plugin.challengeManager.getPlayerChallenge(player) ?: return
-        
+
         if (!challenge.settings.levelWorldBorder) return
-        
-        // Only care about challenge worlds
-        if (event.player.world.name == challenge.worldName || 
-            event.player.world.name == "${challenge.worldName}_nether" || 
-            event.player.world.name == "${challenge.worldName}_the_end") {
-            
-            // Initialize the border in the new world if it's too small
-            val world = event.player.world
-            if (world.worldBorder.size < 3.0) {
-                world.worldBorder.size = 3.0 // Initialize with minimum size
-            }
-        }
+
+        // Immediately update the border for the player in the new world
+        updatePlayerBorder(player, challenge.settings.borderSize, player.world.spawnLocation)
     }
-    
+
     /**
-     * Initialize world border size for all worlds in a challenge
-     * This method can be called when a challenge is created to set initial border
+     * Initialize world borders for players in a challenge
+     * This method should be called when a challenge is created or reset
      */
-    private fun initializeWorldBordersForChallenge(challenge: li.angu.challengeplugin.models.Challenge) {
+    fun initializeWorldBordersForPlayers(challenge: li.angu.challengeplugin.models.Challenge) {
         if (!challenge.settings.levelWorldBorder) return
         
-        val initialSize = 3.0 // Starting with 3x3 border
+        // Initialize with the challenge's saved border size or the default
+        // No need to calculate, as the border size is now a persistent property
         
-        // Initialize main world
-        plugin.server.getWorld(challenge.worldName)?.let { world ->
-            world.worldBorder.size = initialSize
-        }
-        
-        // Initialize nether
-        challenge.getNetherWorld()?.let { world ->
-            world.worldBorder.size = initialSize
-        }
-        
-        // Initialize end
-        challenge.getEndWorld()?.let { world ->
-            world.worldBorder.size = initialSize
-        }
+        // The borders will be updated by the repeating task
+    }
+
+    /**
+     * Clean up tasks when plugin is disabled
+     */
+    fun cleanup() {
+        borderUpdateTask?.cancel()
+        borderUpdateTask = null
     }
 }

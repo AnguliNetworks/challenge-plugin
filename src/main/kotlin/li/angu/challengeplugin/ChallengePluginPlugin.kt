@@ -27,6 +27,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var lobbyManager: LobbyManager
     open lateinit var blockDropListener: BlockDropListener
     open lateinit var worldPreparationManager: WorldPreparationManager
+    open lateinit var experienceBorderListener: ExperienceBorderListener
 
     /**
      * Helper method to register a command with its executor and tab completer
@@ -88,7 +89,9 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(PortalListener(this), this)
         blockDropListener = BlockDropListener(this)
         server.pluginManager.registerEvents(blockDropListener, this)
-        server.pluginManager.registerEvents(ExperienceBorderListener(this), this)
+
+        // Create and register the ExperienceBorderListener
+        experienceBorderListener = ExperienceBorderListener(this)
 
         // Start timer task for challenge duration display
         TimerTask.startTimer(this)
@@ -114,6 +117,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         // Cleanup managers
         challengeSettingsManager.cleanup()
         challengeMenuManager.cleanup()
+        experienceBorderListener.cleanup()
 
         logger.info(languageManager.getMessage("plugin.disabled"))
     }
