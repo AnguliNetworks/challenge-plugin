@@ -328,6 +328,12 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                 // Add player to challenge without resetting
                 if (challenge.addPlayer(player)) {
                     playerChallengeMap[player.uniqueId] = challenge.id
+                    
+                    // Initialize player's world border if the feature is enabled
+                    if (challenge.settings.levelWorldBorder) {
+                        plugin.experienceBorderListener.initializeWorldBordersForPlayers(challenge)
+                    }
+                    
                     return true
                 }
             }
@@ -341,6 +347,12 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             val world = Bukkit.getWorld(challenge.worldName) ?: loadWorld(challenge.worldName)
             if (world != null) {
                 challenge.setupPlayerForChallenge(player, world)
+                
+                // Initialize player's world border if the feature is enabled
+                if (challenge.settings.levelWorldBorder) {
+                    plugin.experienceBorderListener.initializeWorldBordersForPlayers(challenge)
+                }
+                
                 return true
             }
         }
