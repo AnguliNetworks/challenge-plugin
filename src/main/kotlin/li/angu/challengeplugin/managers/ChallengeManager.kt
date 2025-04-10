@@ -389,6 +389,14 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
 
         return false
     }
+    
+    /**
+     * Removes a player from the challenge map without affecting the player object.
+     * Used when a player disconnects to ensure they start fresh in the lobby next time.
+     */
+    fun removePlayerFromChallenge(playerId: UUID) {
+        playerChallengeMap.remove(playerId)
+    }
 
     fun completeChallenge(challengeId: UUID) {
         val challenge = activeChallenges[challengeId] ?: return

@@ -46,8 +46,9 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
             // Remove the player from the challenge to pause timer if needed
             challenge.removePlayer(player)
             
-            // But keep the player in the challenge map for reconnection
-            // The player data is saved and we'll restore it when they reconnect
+            // Remove the player from the playerChallengeMap
+            // This ensures they'll start in the lobby when reconnecting
+            plugin.challengeManager.removePlayerFromChallenge(player.uniqueId)
         }
     }
     
