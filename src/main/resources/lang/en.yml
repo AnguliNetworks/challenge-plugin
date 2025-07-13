@@ -101,6 +101,14 @@ command:
     status_paused: "§7Challenge is currently §cpaused§7."
     status_active: "§7Challenge is currently §aactive§7."
     usage: "§cUsage: /pause [resume]"
+  settings:
+    add_usage: "§cUsage: /settings add <id> <toggle|cycle> <name>"
+    remove_usage: "§cUsage: /settings remove <id>"
+    added: "§aAdded new setting: §f%id%"
+    removed: "§aRemoved setting: §f%id%"
+    type_invalid: "§cInvalid setting type, must be toggle or cycle"
+    already_exists: "§cA setting with ID %id% already exists"
+    not_found: "§cNo setting found with ID %id%"
   debug:
     dragon_success: "§aTeleported to Ender Dragon! Set dragon health to 1 HP (of %max_health%). Destroyed %crystal_count% end crystals."
     dragon_waiting: "§7Teleported to End. Searching for Ender Dragon..."

@@ -47,8 +47,8 @@ class CreateCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
     private fun createChallengeWithName(player: Player, name: String) {
         val challenge = plugin.challengeManager.createChallenge(name)
         
-        // Open settings GUI
-        plugin.challengeSettingsManager.openSettingsInventory(player, challenge)
+        // Open settings GUI using the new SettingsInventoryManager
+        plugin.settingsInventoryManager.openSettingsInventory(player, challenge)
     }
     
     private inner class NamePrompt : StringPrompt() {

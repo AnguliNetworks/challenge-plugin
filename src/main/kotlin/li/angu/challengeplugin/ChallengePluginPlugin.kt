@@ -4,7 +4,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import li.angu.challengeplugin.commands.*
 import li.angu.challengeplugin.managers.ChallengeManager
 import li.angu.challengeplugin.managers.PlayerDataManager
-import li.angu.challengeplugin.managers.ChallengeSettingsManager
+import li.angu.challengeplugin.managers.SettingsInventoryManager
 import li.angu.challengeplugin.managers.ChallengeMenuManager
 import li.angu.challengeplugin.managers.LobbyManager
 import li.angu.challengeplugin.managers.WorldPreparationManager
@@ -22,7 +22,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var challengeManager: ChallengeManager
     open lateinit var languageManager: LanguageManager
     open lateinit var playerDataManager: PlayerDataManager
-    open lateinit var challengeSettingsManager: ChallengeSettingsManager
+    open lateinit var settingsInventoryManager: SettingsInventoryManager
     open lateinit var challengeMenuManager: ChallengeMenuManager
     open lateinit var lobbyManager: LobbyManager
     open lateinit var blockDropListener: BlockDropListener
@@ -51,7 +51,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         languageManager = LanguageManager(this)
         playerDataManager = PlayerDataManager(this)
         challengeManager = ChallengeManager(this)
-        challengeSettingsManager = ChallengeSettingsManager(this)
+        settingsInventoryManager = SettingsInventoryManager(this)
         challengeMenuManager = ChallengeMenuManager(this)
         worldPreparationManager = WorldPreparationManager(this)
 
@@ -115,7 +115,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         }
 
         // Cleanup managers
-        challengeSettingsManager.cleanup()
+        settingsInventoryManager.cleanup()
         challengeMenuManager.cleanup()
         experienceBorderListener.cleanup()
 
