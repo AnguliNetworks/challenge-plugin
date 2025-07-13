@@ -39,7 +39,7 @@ class SettingsInventoryManager(private val plugin: ChallengePluginPlugin) : List
         settings.add(ToggleSetting(
             "natural_regeneration",
             true,
-            Material.GOLDEN_APPLE,
+            Material.APPLE,
             Material.ROTTEN_FLESH,
             plugin
         ))
@@ -48,8 +48,8 @@ class SettingsInventoryManager(private val plugin: ChallengePluginPlugin) : List
         settings.add(ToggleSetting(
             "sync_hearts",
             false,
-            Material.TOTEM_OF_UNDYING,
-            Material.WITHER_SKELETON_SKULL,
+            Material.LEAD,
+            Material.SHEARS,
             plugin
         ))
 
@@ -58,16 +58,16 @@ class SettingsInventoryManager(private val plugin: ChallengePluginPlugin) : List
             "block_randomizer",
             false,
             Material.COMMAND_BLOCK,
-            Material.FURNACE,
+            Material.COBBLESTONE,
             plugin
         ))
 
-        // Add Level World Border toggle
+        // Add Level = WorldBorder toggle
         settings.add(ToggleSetting(
             "level_world_border",
             false,
             Material.EXPERIENCE_BOTTLE,
-            Material.BARRIER,
+            Material.BEDROCK,
             plugin
         ))
 
