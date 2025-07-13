@@ -35,4 +35,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Managers: `managers/` (e.g., `ChallengeManager.kt`)
 - Utilities: `utils/` (e.g., `TimeFormatter.kt`, `LanguageManager.kt`)
 - Commands: `commands/` (e.g., `ChallengeCommand.kt`)
+- Database: `database/` (driver, migrations)
 - Tests: Mirror main structure in `src/test/`
+
+## Database Migration Guidelines
+
+### Creating a New Migration
+When adding new database migrations:
+
+1. **File Location**: Place new migrations in `src/main/kotlin/li/angu/challengeplugin/database/migrations/`
+2. **Naming Convention**: Use format `Migration{XXX}{DescriptiveAction}.kt` where XXX is zero-padded version number
+3. **Examples**: Check existing migrations (`Migration001CreateInitialTables.kt`, `Migration002AddChallengeSettings.kt`, `Migration003AddPlayerData.kt`) to understand the structure and patterns
+4. **Registration**: Add your new migration to the list in `MigrationManager.kt`
+5. **Version Numbers**: Always increment version number sequentially - never modify existing migrations
+6. **Best Practices**: Use `IF NOT EXISTS` for CREATE statements, batch multiple statements with `executeBatch()`, and test thoroughly

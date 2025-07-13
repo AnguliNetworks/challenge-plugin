@@ -24,6 +24,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation("org.xerial:sqlite-jdbc:3.50.2.0")
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     testImplementation(kotlin("test"))
     testImplementation("org.mockito:mockito-core:5.10.0")

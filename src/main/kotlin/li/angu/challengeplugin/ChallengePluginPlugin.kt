@@ -2,6 +2,7 @@ package li.angu.challengeplugin
 
 import org.bukkit.plugin.java.JavaPlugin
 import li.angu.challengeplugin.commands.*
+import li.angu.challengeplugin.database.DatabaseDriver
 import li.angu.challengeplugin.managers.ChallengeManager
 import li.angu.challengeplugin.managers.PlayerDataManager
 import li.angu.challengeplugin.managers.SettingsInventoryManager
@@ -19,6 +20,7 @@ import li.angu.challengeplugin.utils.LanguageManager
 
 open class ChallengePluginPlugin : JavaPlugin() {
 
+    open lateinit var databaseDriver: DatabaseDriver
     open lateinit var challengeManager: ChallengeManager
     open lateinit var languageManager: LanguageManager
     open lateinit var playerDataManager: PlayerDataManager
@@ -46,6 +48,14 @@ open class ChallengePluginPlugin : JavaPlugin() {
     override open fun onEnable() {
         // Make sure the data folder exists
         dataFolder.mkdirs()
+
+        // Initialize database first
+        databaseDriver = DatabaseDriver(this)
+        if (!databaseDriver.initialize()) {
+            logger.severe("Failed to initialize database! Plugin will be disabled.")
+            server.pluginManager.disablePlugin(this)
+            return
+        }
 
         // Initialize managers
         languageManager = LanguageManager(this)
@@ -118,6 +128,11 @@ open class ChallengePluginPlugin : JavaPlugin() {
         settingsInventoryManager.cleanup()
         challengeMenuManager.cleanup()
         experienceBorderListener.cleanup()
+
+        // Close database connection
+        if (::databaseDriver.isInitialized) {
+            databaseDriver.close()
+        }
 
         logger.info(languageManager.getMessage("plugin.disabled"))
     }
