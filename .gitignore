@@ -33,3 +33,6 @@ run/
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Claude Code configuration
+.claude/
