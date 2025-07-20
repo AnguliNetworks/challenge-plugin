@@ -38,6 +38,7 @@ class Challenge(
     val id: UUID = UUID.randomUUID(),
     val name: String,
     var worldName: String,
+    val creatorUuid: UUID,
     val createdAt: Instant = Instant.now(),
     var status: ChallengeStatus = ChallengeStatus.ACTIVE,
     val players: MutableSet<UUID> = mutableSetOf(),

@@ -1,15 +1,14 @@
 package li.angu.challengeplugin.managers
 
 import li.angu.challengeplugin.ChallengePluginPlugin
+import li.angu.challengeplugin.models.Challenge
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
-import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import java.io.File
 import java.util.UUID
 import org.bukkit.util.io.BukkitObjectInputStream
 import org.bukkit.util.io.BukkitObjectOutputStream
@@ -17,6 +16,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
+import java.sql.Timestamp
+import java.time.Instant
 
 /**
  * Manages player data persistence between sessions for challenges.
@@ -25,14 +26,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
 
-    private val dataFolder = File(plugin.dataFolder, "playerdata")
-
     // Maps player UUID to a map of challenge UUIDs to player data
     private val cachedPlayerData = ConcurrentHashMap<UUID, ConcurrentHashMap<UUID, PlayerData>>()
-
-    init {
-        dataFolder.mkdirs()
-    }
 
     /**
      * Saves a player's data when they disconnect during a challenge
@@ -57,8 +52,8 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
         // Cache player data
         cachedPlayerData.computeIfAbsent(uuid) { ConcurrentHashMap() }[challengeId] = playerData
 
-        // Save to file
-        saveToFile(playerData)
+        // Save to database
+        saveToDatabase(playerData)
 
         plugin.logger.info("Saved player data for ${player.name} in challenge $challengeId")
     }
@@ -73,9 +68,9 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
         // Check cache first
         var playerData = cachedPlayerData[uuid]?.get(challengeId)
 
-        // If not in cache, load from file
+        // If not in cache, load from database
         if (playerData == null) {
-            playerData = loadFromFile(uuid, challengeId)
+            playerData = loadFromDatabase(uuid, challengeId)
             if (playerData != null) {
                 cachedPlayerData.computeIfAbsent(uuid) { ConcurrentHashMap() }[challengeId] = playerData
             }
@@ -131,7 +126,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
 
         // Clear this specific challenge data after restoring
         cachedPlayerData[uuid]?.remove(challengeId)
-        removeDataFile(uuid, challengeId)
+        removeFromDatabase(uuid, challengeId)
 
         plugin.logger.info("Restored player data for ${player.name} in challenge $challengeId")
         return true
@@ -141,14 +136,82 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
      * Checks if a player has saved data for a challenge
      */
     fun hasPlayerData(playerId: UUID, challengeId: UUID): Boolean {
+        plugin.logger.info("Checking hasPlayerData for player $playerId, challenge $challengeId")
+        
         // Check cache first
         if (cachedPlayerData[playerId]?.containsKey(challengeId) == true) {
+            plugin.logger.info("Found data in cache for player $playerId, challenge $challengeId")
             return true
         }
+        plugin.logger.info("No cached data found, checking database for player $playerId, challenge $challengeId")
 
-        // Check file
-        val file = File(dataFolder, "${playerId}_${challengeId}.yml")
-        return file.exists()
+        // Check database for player data
+
+        // Check database
+        val result = plugin.databaseDriver.executeQuery(
+            "SELECT 1 FROM player_challenge_data WHERE player_uuid = ? AND challenge_id = ?",
+            playerId.toString(),
+            challengeId.toString()
+        ) { rs ->
+            val hasData = rs.next()
+            plugin.logger.info("Database query result for player $playerId, challenge $challengeId: $hasData")
+            hasData
+        } ?: false
+        
+        plugin.logger.info("Final hasPlayerData result for player $playerId, challenge $challengeId: $result")
+        return result
+    }
+
+    /**
+     * Efficiently finds which challenge (if any) a player has saved data for.
+     * Only queries the database once and returns the challenge object.
+     * Returns null if no saved data exists.
+     */
+    fun findChallengeWithPlayerData(playerId: UUID): Challenge? {
+        plugin.logger.info("Looking for challenge data for player $playerId")
+        
+        // First check cache for any cached data
+        cachedPlayerData[playerId]?.let { challengeMap ->
+            if (challengeMap.isNotEmpty()) {
+                // Player has cached data, find which challenge it belongs to
+                val challengeId = challengeMap.keys.first()
+                plugin.logger.info("Found cached data for player $playerId in challenge $challengeId")
+                return plugin.challengeManager.getChallenge(challengeId)
+            }
+        }
+
+        plugin.logger.info("No cached data found, querying database for player $playerId")
+
+        // Query database once to find any challenge with player data
+        val challengeId = plugin.databaseDriver.executeQuery(
+            "SELECT challenge_id FROM player_challenge_data WHERE player_uuid = ? LIMIT 1",
+            playerId.toString()
+        ) { rs ->
+            if (rs.next()) {
+                try {
+                    val id = rs.getString("challenge_id")
+                    plugin.logger.info("Found database entry for player $playerId in challenge $id")
+                    UUID.fromString(id)
+                } catch (e: Exception) {
+                    plugin.logger.warning("Invalid challenge_id UUID in player data: ${e.message}")
+                    null
+                }
+            } else {
+                plugin.logger.info("No database entry found for player $playerId")
+                null
+            }
+        }
+
+        // Return the challenge object if found
+        return challengeId?.let { 
+            val challenge = plugin.challengeManager.getChallenge(it)
+            if (challenge != null) {
+                plugin.logger.info("Found challenge ${challenge.name} for player $playerId")
+            } else {
+                plugin.logger.warning("Challenge $it found in database but not loaded in memory for player $playerId")
+            }
+            challenge
+        }
     }
 
     /**
@@ -160,17 +223,17 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             // Clear specific player-challenge combination
             playerId != null && challengeId != null -> {
                 cachedPlayerData[playerId]?.remove(challengeId)
-                removeDataFile(playerId, challengeId)
+                removeFromDatabase(playerId, challengeId)
             }
 
             // Clear all data for a specific player
             playerId != null -> {
                 cachedPlayerData.remove(playerId)
-                dataFolder.listFiles()?.forEach { file ->
-                    if (file.name.startsWith("${playerId}_") && file.extension == "yml") {
-                        file.delete()
-                    }
-                }
+                val operations = listOf(
+                    "DELETE FROM player_potion_effects WHERE player_uuid = ?" to arrayOf<Any?>(playerId.toString()),
+                    "DELETE FROM player_challenge_data WHERE player_uuid = ?" to arrayOf<Any?>(playerId.toString())
+                )
+                plugin.databaseDriver.executeTransaction(operations)
             }
 
             // Clear all data for a specific challenge
@@ -180,148 +243,222 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
                     challengeMap.remove(challengeId)
                 }
 
-                // Remove files
-                dataFolder.listFiles()?.forEach { file ->
-                    if (file.name.endsWith("_${challengeId}.yml")) {
-                        file.delete()
-                    }
-                }
+                // Remove from database
+                val operations = listOf(
+                    "DELETE FROM player_potion_effects WHERE challenge_id = ?" to arrayOf<Any?>(challengeId.toString()),
+                    "DELETE FROM player_challenge_data WHERE challenge_id = ?" to arrayOf<Any?>(challengeId.toString())
+                )
+                plugin.databaseDriver.executeTransaction(operations)
             }
         }
     }
 
-    private fun saveToFile(playerData: PlayerData) {
-        val file = File(dataFolder, "${playerData.uuid}_${playerData.challengeId}.yml")
-        val config = YamlConfiguration()
+    private fun saveToDatabase(playerData: PlayerData) {
+        val operations = mutableListOf<Pair<String, Array<Any?>>>()
 
-        config.set("uuid", playerData.uuid.toString())
-        config.set("challengeId", playerData.challengeId.toString())
-
-        // Save inventory as Base64
-        config.set("inventory", itemStackArrayToBase64(playerData.inventory))
-        config.set("armor", itemStackArrayToBase64(playerData.armor))
-        config.set("enderChest", itemStackArrayToBase64(playerData.enderChest))
-
-        // Save location
-        config.set("location.world", playerData.location.world?.name)
-        config.set("location.x", playerData.location.x)
-        config.set("location.y", playerData.location.y)
-        config.set("location.z", playerData.location.z)
-        config.set("location.yaw", playerData.location.yaw)
-        config.set("location.pitch", playerData.location.pitch)
-
-        // Save player stats
-        config.set("exp", playerData.exp)
-        config.set("level", playerData.level)
-        config.set("health", playerData.health)
-        config.set("foodLevel", playerData.foodLevel)
-        config.set("gameMode", playerData.gameMode.name)
-
-        // Save potion effects
-        val potionEffects = mutableListOf<Map<String, Any>>()
-        playerData.potionEffects.forEach { effect ->
-            val effectMap = mutableMapOf<String, Any>(
-                "type" to effect.type.name,
-                "duration" to effect.duration,
-                "amplifier" to effect.amplifier,
-                "ambient" to effect.isAmbient,
-                "particles" to effect.hasParticles(),
-                "icon" to effect.hasIcon()
+        // Save main player data (temporarily without armor to test)
+        operations.add(
+            "INSERT OR REPLACE INTO player_challenge_data " +
+            "(player_uuid, challenge_id, inventory_data, ender_chest_data, location_world, " +
+            "location_x, location_y, location_z, location_yaw, location_pitch, health, " +
+            "food_level, experience_points, experience_level, game_mode, saved_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" to arrayOf<Any?>(
+                playerData.uuid.toString(),
+                playerData.challengeId.toString(),
+                itemStackArrayToBase64(playerData.inventory),
+                itemStackArrayToBase64(playerData.enderChest),
+                playerData.location.world?.name ?: "",
+                playerData.location.x,
+                playerData.location.y,
+                playerData.location.z,
+                playerData.location.yaw.toDouble(),
+                playerData.location.pitch.toDouble(),
+                playerData.health,
+                playerData.foodLevel,
+                playerData.exp.toInt(),
+                playerData.level,
+                playerData.gameMode.name,
+                Timestamp.from(Instant.now())
             )
-            potionEffects.add(effectMap)
-        }
-        config.set("potionEffects", potionEffects)
-
-        config.save(file)
-    }
-
-    private fun loadFromFile(playerId: UUID, challengeId: UUID): PlayerData? {
-        val file = File(dataFolder, "${playerId}_${challengeId}.yml")
-        if (!file.exists()) {
-            return null
-        }
-
-        val config = YamlConfiguration.loadConfiguration(file)
-
-        // Get inventory items
-        val inventoryBase64 = config.getString("inventory") ?: return null
-        val armorBase64 = config.getString("armor") ?: return null
-        val enderChestBase64 = config.getString("enderChest") ?: return null
-
-        val inventory = try {
-            base64ToItemStackArray(inventoryBase64)
-        } catch (e: Exception) {
-            plugin.logger.warning("Failed to load inventory for player $playerId: ${e.message}")
-            return null
-        }
-
-        val armor = try {
-            base64ToItemStackArray(armorBase64)
-        } catch (e: Exception) {
-            plugin.logger.warning("Failed to load armor for player $playerId: ${e.message}")
-            return null
-        }
-
-        val enderChest = try {
-            base64ToItemStackArray(enderChestBase64)
-        } catch (e: Exception) {
-            plugin.logger.warning("Failed to load ender chest for player $playerId: ${e.message}")
-            return null
-        }
-
-        // Get world location
-        val worldName = config.getString("location.world") ?: return null
-        val world = Bukkit.getWorld(worldName)
-
-        if (world == null) {
-            plugin.logger.warning("World $worldName not found for player $playerId")
-            return null
-        }
-
-        val location = Location(
-            world,
-            config.getDouble("location.x"),
-            config.getDouble("location.y"),
-            config.getDouble("location.z"),
-            config.getDouble("location.yaw").toFloat(),
-            config.getDouble("location.pitch").toFloat()
         )
 
-        // Get GameMode or default to SURVIVAL
-        val gameModeStr = config.getString("gameMode")
-        val gameMode = if (gameModeStr != null) {
-            try {
-                GameMode.valueOf(gameModeStr)
-            } catch (e: Exception) {
-                plugin.logger.warning("Invalid GameMode value: $gameModeStr")
-                GameMode.SURVIVAL
-            }
-        } else {
-            GameMode.SURVIVAL
+        // Clear existing potion effects
+        operations.add(
+            "DELETE FROM player_potion_effects WHERE player_uuid = ? AND challenge_id = ?" to arrayOf<Any?>(
+                playerData.uuid.toString(),
+                playerData.challengeId.toString()
+            )
+        )
+
+        // Save potion effects
+        playerData.potionEffects.forEach { effect ->
+            operations.add(
+                "INSERT INTO player_potion_effects " +
+                "(player_uuid, challenge_id, effect_type, duration, amplifier, ambient, particles, icon) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)" to arrayOf<Any?>(
+                    playerData.uuid.toString(),
+                    playerData.challengeId.toString(),
+                    effect.type.name,
+                    effect.duration,
+                    effect.amplifier,
+                    effect.isAmbient,
+                    effect.hasParticles(),
+                    effect.hasIcon()
+                )
+            )
         }
 
-        // Get potion effects
-        val potionEffects = mutableListOf<PotionEffect>()
-        if (config.contains("potionEffects")) {
-            val effectsList = config.getList("potionEffects")
-            effectsList?.forEach { effectObj ->
-                if (effectObj is Map<*, *>) {
-                    try {
-                        val type = PotionEffectType.getByName(effectObj["type"] as? String ?: "")
-                        if (type != null) {
-                            val duration = (effectObj["duration"] as? Int) ?: 0
-                            val amplifier = (effectObj["amplifier"] as? Int) ?: 0
-                            val ambient = (effectObj["ambient"] as? Boolean) ?: false
-                            val particles = (effectObj["particles"] as? Boolean) ?: true
-                            val icon = (effectObj["icon"] as? Boolean) ?: true
+        plugin.logger.info("Attempting to save player data for ${playerData.uuid} to challenge ${playerData.challengeId}")
+        plugin.logger.info("Total operations to execute: ${operations.size}")
+        
+        if (!plugin.databaseDriver.executeTransaction(operations)) {
+            plugin.logger.severe("Failed to save player data to database for ${playerData.uuid}")
+            plugin.logger.severe("Operations that failed:")
+            operations.forEachIndexed { index, (sql, params) ->
+                plugin.logger.severe("  Operation $index: $sql")
+                plugin.logger.severe("  Parameters: ${params.joinToString(", ")}")
+            }
+        } else {
+            plugin.logger.info("Successfully saved player data for ${playerData.uuid} to challenge ${playerData.challengeId}")
+            
+            // Immediately verify the save worked
+            plugin.logger.info("Verifying save by querying database...")
+            val count = plugin.databaseDriver.executeQuery(
+                "SELECT COUNT(*) as count FROM player_challenge_data WHERE player_uuid = ? AND challenge_id = ?",
+                playerData.uuid.toString(),
+                playerData.challengeId.toString()
+            ) { rs ->
+                if (rs.next()) rs.getInt("count") else 0
+            } ?: 0
+            plugin.logger.info("Verification: Found $count entries in database for player ${playerData.uuid}, challenge ${playerData.challengeId}")
+            
+            // Force database sync to disk
+            plugin.databaseDriver.sync()
+            plugin.logger.info("Database synced to disk")
+        }
+    }
 
+    private fun loadFromDatabase(playerId: UUID, challengeId: UUID): PlayerData? {
+        try {
+            // Load main player data
+            val playerData = plugin.databaseDriver.executeQuery(
+                """
+                SELECT inventory_data, armor_data, ender_chest_data, location_world, location_x, location_y, location_z,
+                       location_yaw, location_pitch, health, food_level, experience_points, experience_level, game_mode
+                FROM player_challenge_data 
+                WHERE player_uuid = ? AND challenge_id = ?
+                """.trimIndent(),
+                playerId.toString(),
+                challengeId.toString()
+            ) { rs ->
+                if (rs.next()) {
+                    val inventoryBase64 = rs.getString("inventory_data")
+                    val armorBase64 = rs.getString("armor_data")
+                    val enderChestBase64 = rs.getString("ender_chest_data")
+                    
+                    if (inventoryBase64 == null || enderChestBase64 == null) {
+                        return@executeQuery null
+                    }
+
+                    val inventory = try {
+                        base64ToItemStackArray(inventoryBase64)
+                    } catch (e: Exception) {
+                        plugin.logger.warning("Failed to load inventory for player $playerId: ${e.message}")
+                        return@executeQuery null
+                    }
+
+                    // Load armor data - handle backward compatibility with old data that doesn't have armor
+                    val armor = if (armorBase64 != null) {
+                        try {
+                            base64ToItemStackArray(armorBase64)
+                        } catch (e: Exception) {
+                            plugin.logger.warning("Failed to load armor for player $playerId: ${e.message}")
+                            arrayOfNulls(4) // Fallback to empty armor
+                        }
+                    } else {
+                        arrayOfNulls(4) // Backward compatibility for old data
+                    }
+
+                    val enderChest = try {
+                        base64ToItemStackArray(enderChestBase64)
+                    } catch (e: Exception) {
+                        plugin.logger.warning("Failed to load ender chest for player $playerId: ${e.message}")
+                        return@executeQuery null
+                    }
+
+                    // Get world location
+                    val worldName = rs.getString("location_world")
+                    if (worldName == null) {
+                        return@executeQuery null
+                    }
+                    
+                    val world = Bukkit.getWorld(worldName)
+                    if (world == null) {
+                        plugin.logger.warning("World $worldName not found for player $playerId")
+                        return@executeQuery null
+                    }
+
+                    val location = Location(
+                        world,
+                        rs.getDouble("location_x"),
+                        rs.getDouble("location_y"),
+                        rs.getDouble("location_z"),
+                        rs.getDouble("location_yaw").toFloat(),
+                        rs.getDouble("location_pitch").toFloat()
+                    )
+
+                    // Get GameMode or default to SURVIVAL
+                    val gameModeStr = rs.getString("game_mode")
+                    val gameMode = try {
+                        GameMode.valueOf(gameModeStr)
+                    } catch (e: Exception) {
+                        plugin.logger.warning("Invalid GameMode value: $gameModeStr")
+                        GameMode.SURVIVAL
+                    }
+
+                    PlayerData(
+                        uuid = playerId,
+                        challengeId = challengeId,
+                        inventory = inventory,
+                        armor = armor,
+                        enderChest = enderChest,
+                        location = location,
+                        exp = rs.getInt("experience_points").toFloat(),
+                        level = rs.getInt("experience_level"),
+                        health = rs.getDouble("health"),
+                        foodLevel = rs.getInt("food_level"),
+                        gameMode = gameMode,
+                        potionEffects = emptyList() // Will be loaded separately
+                    )
+                } else {
+                    null
+                }
+            }
+
+            if (playerData == null) return null
+
+            // Load potion effects
+            val potionEffects = mutableListOf<PotionEffect>()
+            plugin.databaseDriver.executeQuery(
+                """
+                SELECT effect_type, duration, amplifier, ambient, particles, icon
+                FROM player_potion_effects 
+                WHERE player_uuid = ? AND challenge_id = ?
+                """.trimIndent(),
+                playerId.toString(),
+                challengeId.toString()
+            ) { rs ->
+                while (rs.next()) {
+                    try {
+                        val type = PotionEffectType.getByName(rs.getString("effect_type"))
+                        if (type != null) {
                             potionEffects.add(PotionEffect(
                                 type,
-                                duration,
-                                amplifier,
-                                ambient,
-                                particles,
-                                icon
+                                rs.getInt("duration"),
+                                rs.getInt("amplifier"),
+                                rs.getBoolean("ambient"),
+                                rs.getBoolean("particles"),
+                                rs.getBoolean("icon")
                             ))
                         }
                     } catch (e: Exception) {
@@ -329,28 +466,29 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
                     }
                 }
             }
-        }
 
-        return PlayerData(
-            uuid = playerId,
-            challengeId = challengeId,
-            inventory = inventory,
-            armor = armor,
-            enderChest = enderChest,
-            location = location,
-            exp = config.getDouble("exp").toFloat(),
-            level = config.getInt("level"),
-            health = config.getDouble("health"),
-            foodLevel = config.getInt("foodLevel"),
-            gameMode = gameMode,
-            potionEffects = potionEffects
-        )
+            return playerData.copy(potionEffects = potionEffects)
+
+        } catch (e: Exception) {
+            plugin.logger.severe("Failed to load player data from database for $playerId: ${e.message}")
+            return null
+        }
     }
 
-    private fun removeDataFile(playerId: UUID, challengeId: UUID) {
-        val file = File(dataFolder, "${playerId}_${challengeId}.yml")
-        if (file.exists()) {
-            file.delete()
+    private fun removeFromDatabase(playerId: UUID, challengeId: UUID) {
+        val operations = listOf(
+            "DELETE FROM player_potion_effects WHERE player_uuid = ? AND challenge_id = ?" to arrayOf<Any?>(
+                playerId.toString(),
+                challengeId.toString()
+            ),
+            "DELETE FROM player_challenge_data WHERE player_uuid = ? AND challenge_id = ?" to arrayOf<Any?>(
+                playerId.toString(),
+                challengeId.toString()
+            )
+        )
+
+        if (!plugin.databaseDriver.executeTransaction(operations)) {
+            plugin.logger.warning("Failed to remove player data from database for $playerId")
         }
     }
 

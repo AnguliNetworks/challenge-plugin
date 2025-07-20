@@ -12,8 +12,6 @@ import org.bukkit.inventory.ItemStack
 import java.util.Random
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import org.bukkit.configuration.file.YamlConfiguration
-import java.io.File
 
 class BlockDropListener(private val plugin: ChallengePluginPlugin) : Listener {
 
@@ -21,10 +19,8 @@ class BlockDropListener(private val plugin: ChallengePluginPlugin) : Listener {
     // ChallengeID -> (Block Material -> Random Material)
     private val randomDropsMap = ConcurrentHashMap<UUID, ConcurrentHashMap<Material, Material>>()
     private val random = Random()
-    private val dataFolder = File(plugin.dataFolder, "randomizer")
-    
+
     init {
-        dataFolder.mkdirs()
         loadRandomizerMappings()
     }
 
@@ -44,7 +40,17 @@ class BlockDropListener(private val plugin: ChallengePluginPlugin) : Listener {
             }
 
             // Return a random material
-            validMaterials[random.nextInt(validMaterials.size)]
+            val randomMaterial = validMaterials[random.nextInt(validMaterials.size)]
+
+            // Save the new mapping to database
+            plugin.databaseDriver.executeUpdate(
+                "INSERT OR REPLACE INTO randomizer_mappings (challenge_id, source_material, target_material) VALUES (?, ?, ?)",
+                challengeId.toString(),
+                blockMaterial.name,
+                randomMaterial.name
+            )
+
+            randomMaterial
         }
     }
 
@@ -146,58 +152,69 @@ class BlockDropListener(private val plugin: ChallengePluginPlugin) : Listener {
             }
         }
     }
-    
+
     /**
-     * Loads randomizer mappings from disk for all saved challenges
+     * Loads randomizer mappings from database for all saved challenges
      */
     private fun loadRandomizerMappings() {
-        dataFolder.listFiles()?.filter { it.isFile && it.extension == "yml" }?.forEach { file ->
-            try {
-                val config = YamlConfiguration.loadConfiguration(file)
-                val challengeId = UUID.fromString(file.nameWithoutExtension)
-                val challengeMap = ConcurrentHashMap<Material, Material>()
-                
-                // Load all material mappings
-                if (config.contains("mappings")) {
-                    val mappingsSection = config.getConfigurationSection("mappings")
-                    mappingsSection?.getKeys(false)?.forEach { key ->
-                        try {
-                            val sourceMaterial = Material.valueOf(key)
-                            val targetMaterial = Material.valueOf(mappingsSection.getString(key)!!)
-                            challengeMap[sourceMaterial] = targetMaterial
-                        } catch (e: Exception) {
-                            plugin.logger.warning("Failed to load randomizer mapping: $key - ${e.message}")
-                        }
+        try {
+            plugin.databaseDriver.executeQuery(
+                "SELECT challenge_id, source_material, target_material FROM randomizer_mappings"
+            ) { rs ->
+                while (rs.next()) {
+                    try {
+                        val challengeId = UUID.fromString(rs.getString("challenge_id"))
+                        val sourceMaterial = Material.valueOf(rs.getString("source_material"))
+                        val targetMaterial = Material.valueOf(rs.getString("target_material"))
+
+                        val challengeMap = randomDropsMap.computeIfAbsent(challengeId) { ConcurrentHashMap() }
+                        challengeMap[sourceMaterial] = targetMaterial
+
+                    } catch (e: Exception) {
+                        plugin.logger.warning("Failed to load randomizer mapping from database: ${e.message}")
                     }
                 }
-                
-                // Add to our in-memory map
-                if (challengeMap.isNotEmpty()) {
-                    randomDropsMap[challengeId] = challengeMap
-                    plugin.logger.info("Loaded ${challengeMap.size} randomizer mappings for challenge $challengeId")
-                }
-            } catch (e: Exception) {
-                plugin.logger.warning("Failed to load randomizer mappings from ${file.name}: ${e.message}")
             }
+
+            if (randomDropsMap.isNotEmpty()) {
+                val totalMappings = randomDropsMap.values.sumOf { it.size }
+                plugin.logger.info("Loaded $totalMappings randomizer mappings for ${randomDropsMap.size} challenges")
+            }
+
+        } catch (e: Exception) {
+            plugin.logger.warning("Failed to load randomizer mappings from database: ${e.message}")
         }
     }
-    
+
     /**
-     * Saves all randomizer mappings to disk
+     * Saves all randomizer mappings to database
      */
     fun saveRandomizerMappings() {
         randomDropsMap.forEach { (challengeId, challengeMap) ->
             try {
-                val file = File(dataFolder, "$challengeId.yml")
-                val config = YamlConfiguration()
-                
+                val operations = mutableListOf<Pair<String, Array<Any?>>>()
+
+                // Clear existing mappings for this challenge
+                operations.add(
+                    "DELETE FROM randomizer_mappings WHERE challenge_id = ?" to arrayOf<Any?>(challengeId.toString())
+                )
+
                 // Save all material mappings
                 challengeMap.forEach { (source, target) ->
-                    config.set("mappings.${source.name}", target.name)
+                    operations.add(
+                        "INSERT INTO randomizer_mappings (challenge_id, source_material, target_material) VALUES (?, ?, ?)" to arrayOf<Any?>(
+                            challengeId.toString(),
+                            source.name,
+                            target.name
+                        )
+                    )
                 }
-                
-                config.save(file)
-                plugin.logger.info("Saved ${challengeMap.size} randomizer mappings for challenge $challengeId")
+
+                if (plugin.databaseDriver.executeTransaction(operations)) {
+                    plugin.logger.info("Saved ${challengeMap.size} randomizer mappings for challenge $challengeId")
+                } else {
+                    plugin.logger.warning("Failed to save randomizer mappings for challenge $challengeId")
+                }
             } catch (e: Exception) {
                 plugin.logger.warning("Failed to save randomizer mappings for challenge $challengeId: ${e.message}")
             }

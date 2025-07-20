@@ -18,48 +18,41 @@ import java.util.UUID
  * for challenges across sessions.
  */
 class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : Listener {
-    
-    @EventHandler
-    fun onPlayerJoin(event: PlayerJoinEvent) {
-        val player = event.player
-        
-        // Always teleport player to the lobby first
-        plugin.lobbyManager.teleportToLobby(player)
-        
-        // Send welcome message
-        player.sendMessage(plugin.languageManager.getMessage("lobby.welcome", player))
-        
-        // Note: We've removed the automatic challenge rejoining
-        // Players must now explicitly join their challenges using the menu
-    }
-    
+
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         val player = event.player
+        plugin.logger.info("Player ${player.name} (${player.uniqueId}) is quitting the server")
+
         val challenge = plugin.challengeManager.getPlayerChallenge(player)
-        
+        plugin.logger.info("Player ${player.name} current challenge: ${challenge?.name ?: "none"}")
+
         // Save player data if they're in an active challenge
         if (challenge != null && challenge.isPlayerInChallenge(player)) {
+            plugin.logger.info("Saving player data for ${player.name} in challenge ${challenge.name}")
             // Save player data for the challenge
             plugin.playerDataManager.savePlayerData(player, challenge.id)
-            
+
             // Remove the player from the challenge to pause timer if needed
             challenge.removePlayer(player)
-            
+
             // Remove the player from the playerChallengeMap
             // This ensures they'll start in the lobby when reconnecting
             plugin.challengeManager.removePlayerFromChallenge(player.uniqueId)
+            plugin.logger.info("Player ${player.name} removed from challenge and mapping cleared")
+        } else {
+            plugin.logger.info("Player ${player.name} was not in a challenge, no data to save")
         }
     }
-    
+
     @EventHandler
     fun onPlayerChangedWorld(event: PlayerChangedWorldEvent) {
         val player = event.player
         val fromWorld = event.from
         val toWorld = player.world
-        
+
         val challenge = plugin.challengeManager.getPlayerChallenge(player)
-        
+
         // Check if player entered the lobby world
         if (plugin.lobbyManager.isLobbyWorld(toWorld.name)) {
             // Check if the player isn't coming from a challenge world
@@ -70,22 +63,22 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
             }
         }
     }
-    
+
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
         val player = event.player
         val item = event.item ?: return
-        
+
         // Check if the item is our menu item
-        if (plugin.lobbyManager.isMenuItem(item) && 
+        if (plugin.lobbyManager.isMenuItem(item) &&
             (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK)) {
             event.isCancelled = true
-            
+
             // Open the menu
             plugin.challengeMenuManager.openMainMenu(player)
         }
     }
-    
+
     /**
      * Adds a player to a challenge without resetting their inventory or location
      * Used when a player reconnects to a challenge they previously left

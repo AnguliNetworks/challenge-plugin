@@ -13,6 +13,7 @@ lobby:
   welcome: "§a§lWelcome to the Challenge Server!"
   teleported: "§aTeleported to lobby."
   spawn_set: "§aLobby spawn set to your current location."
+  restored_to_challenge: "§aWelcome back! Restored to challenge '§f%name%§a'."
 
 challenge:
   created: "§aChallenge '%name%' created successfully!"
