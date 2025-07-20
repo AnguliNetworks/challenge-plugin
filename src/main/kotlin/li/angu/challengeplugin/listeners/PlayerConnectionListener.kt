@@ -10,6 +10,8 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
 import java.util.UUID
 
@@ -86,6 +88,31 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
 
             // Open the menu
             plugin.challengeMenuManager.openMainMenu(player)
+        }
+    }
+
+    @EventHandler
+    fun onEntityDamage(event: EntityDamageEvent) {
+        val player = event.entity as? Player ?: return
+        
+        // Check if player is in lobby world
+        if (plugin.lobbyManager.isLobbyWorld(player.world.name)) {
+            // Cancel all damage in lobby
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onPlayerMove(event: PlayerMoveEvent) {
+        val player = event.player
+        val to = event.to ?: return
+        
+        // Check if player is in lobby world and fell below y=0
+        if (plugin.lobbyManager.isLobbyWorld(player.world.name) && to.y < 0) {
+            // Teleport back to lobby spawn
+            plugin.lobbyManager.getLobbySpawn()?.let { spawn ->
+                player.teleport(spawn)
+            }
         }
     }
 
