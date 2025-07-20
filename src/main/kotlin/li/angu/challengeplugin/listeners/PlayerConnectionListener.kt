@@ -23,6 +23,9 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
+        // Set custom join message
+        event.joinMessage = plugin.languageManager.getMessage("connection.join", player, "player" to player.name)
+
         // Always teleport player to the lobby first
         plugin.lobbyManager.teleportToLobby(player)
 
@@ -34,6 +37,9 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
     fun onPlayerQuit(event: PlayerQuitEvent) {
         val player = event.player
         val challenge = plugin.challengeManager.getPlayerChallenge(player)
+
+        // Set custom quit message
+        event.quitMessage = plugin.languageManager.getMessage("connection.leave", player, "player" to player.name)
 
         // Save player data if they're in an active challenge
         if (challenge != null && challenge.isPlayerInChallenge(player)) {

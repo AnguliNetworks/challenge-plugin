@@ -9,6 +9,10 @@ language:
   changed: "§aLanguage set to: §f%lang%"
   not_available: "§cLanguage not available: §f%lang%"
 
+connection:
+  join: "§a[§2+§a] §7%player%"
+  leave: "§7[§c-§7] §7%player%"
+
 lobby:
   welcome: "§a§lWelcome to the Challenge Server!"
   teleported: "§aTeleported to lobby."
