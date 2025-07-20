@@ -87,7 +87,7 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
     }
 
     /**
-     * Teleport a player to the lobby and set their gamemode to creative
+     * Teleport a player to the lobby and set their gamemode to survival
      * Note: This method does not automatically leave challenges - that should be handled
      * by the calling code if needed.
      */
@@ -101,7 +101,7 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
         // Teleport to lobby spawn
         lobbySpawnLocation?.let { spawn ->
             player.teleport(spawn)
-            player.gameMode = GameMode.CREATIVE
+            player.gameMode = GameMode.SURVIVAL
             setupLobbyInventory(player)
 
             // Send welcome message only for new players

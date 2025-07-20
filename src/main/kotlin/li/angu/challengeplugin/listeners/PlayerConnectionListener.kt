@@ -61,8 +61,8 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
         if (plugin.lobbyManager.isLobbyWorld(toWorld.name)) {
             // Check if the player isn't coming from a challenge world
             if (challenge == null) {
-                // Set player to creative mode and give them the menu item
-                player.gameMode = org.bukkit.GameMode.CREATIVE
+                // Set player to survival mode and give them the menu item
+                player.gameMode = org.bukkit.GameMode.SURVIVAL
                 plugin.lobbyManager.setupLobbyInventory(player)
             }
         }

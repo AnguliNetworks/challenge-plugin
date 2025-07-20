@@ -15,6 +15,7 @@ import li.angu.challengeplugin.listeners.PlayerHealthListener
 import li.angu.challengeplugin.listeners.BlockDropListener
 import li.angu.challengeplugin.listeners.PortalListener
 import li.angu.challengeplugin.listeners.ExperienceBorderListener
+import li.angu.challengeplugin.listeners.LobbyProtectionListener
 import li.angu.challengeplugin.tasks.TimerTask
 import li.angu.challengeplugin.utils.LanguageManager
 
@@ -97,6 +98,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerConnectionListener(this), this)
         server.pluginManager.registerEvents(PlayerHealthListener(this), this)
         server.pluginManager.registerEvents(PortalListener(this), this)
+        server.pluginManager.registerEvents(LobbyProtectionListener(this), this)
         blockDropListener = BlockDropListener(this)
         server.pluginManager.registerEvents(blockDropListener, this)
 
