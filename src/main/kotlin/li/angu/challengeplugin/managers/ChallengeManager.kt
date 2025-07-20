@@ -144,16 +144,43 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         }
     }
 
+    private fun challengeExistsInDatabase(challengeId: UUID): Boolean {
+        return plugin.databaseDriver.executeQuery(
+            "SELECT 1 FROM challenges WHERE id = ?",
+            challengeId.toString()
+        ) { rs ->
+            rs.next()
+        } ?: false
+    }
+
+    private fun challengeSettingsExistInDatabase(challengeId: UUID): Boolean {
+        return plugin.databaseDriver.executeQuery(
+            "SELECT 1 FROM challenge_settings WHERE challenge_id = ?",
+            challengeId.toString()
+        ) { rs ->
+            rs.next()
+        } ?: false
+    }
+
     fun saveChallengeToDatabase(challenge: Challenge): Boolean {
         val operations = mutableListOf<Pair<String, Array<Any?>>>()
 
-        // Save or update challenge data - use UPDATE to avoid triggering cascade deletes
-        val challengeQuery = """
+        // Check if challenge exists and use appropriate query
+        val challengeExists = challengeExistsInDatabase(challenge.id)
+        val challengeQuery = if (challengeExists) {
+            """
             UPDATE challenges SET 
             name = ?, world_name = ?, creator_uuid = ?, status = ?, created_at = ?, 
             started_at = ?, completed_at = ?, paused_at = ?, last_empty_timestamp = ?, total_paused_duration = ?
             WHERE id = ?
-        """.trimIndent()
+            """.trimIndent()
+        } else {
+            """
+            INSERT INTO challenges 
+            (name, world_name, creator_uuid, status, created_at, started_at, completed_at, paused_at, last_empty_timestamp, total_paused_duration, id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """.trimIndent()
+        }
 
         operations.add(challengeQuery to arrayOf<Any?>(
             challenge.name,
@@ -166,16 +193,26 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             challenge.pausedAt?.let { Timestamp.from(it) },
             challenge.lastEmptyTimestamp?.let { Timestamp.from(it) },
             challenge.totalPausedDuration.seconds,
-            challenge.id.toString()  // WHERE id = ? (moved to end)
+            challenge.id.toString()
         ))
 
         // Save or update challenge settings - use UPDATE to avoid cascade deletes
-        val settingsQuery = """
+        // Check if challenge settings exist and use appropriate query
+        val settingsExist = challengeSettingsExistInDatabase(challenge.id)
+        val settingsQuery = if (settingsExist) {
+            """
             UPDATE challenge_settings SET 
             natural_regeneration = ?, sync_hearts = ?, block_randomizer = ?, 
             level_world_border = ?, starter_kit = ?, border_size = ?
             WHERE challenge_id = ?
-        """.trimIndent()
+            """.trimIndent()
+        } else {
+            """
+            INSERT INTO challenge_settings 
+            (natural_regeneration, sync_hearts, block_randomizer, level_world_border, starter_kit, border_size, challenge_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """.trimIndent()
+        }
 
         operations.add(settingsQuery to arrayOf<Any?>(
             challenge.settings.naturalRegeneration,
@@ -184,7 +221,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             challenge.settings.levelWorldBorder,
             challenge.settings.starterKit.name,
             challenge.settings.borderSize,
-            challenge.id.toString()  // WHERE challenge_id = ? (moved to end)
+            challenge.id.toString()
         ))
 
         // Clear existing participants

@@ -49,3 +49,25 @@ When adding new database migrations:
 4. **Registration**: Add your new migration to the list in `MigrationManager.kt`
 5. **Version Numbers**: Always increment version number sequentially - never modify existing migrations
 6. **Best Practices**: Use `IF NOT EXISTS` for CREATE statements, batch multiple statements with `executeBatch()`, and test thoroughly
+
+### Database Query Guidelines
+
+**NEVER use `INSERT OR REPLACE`** - This SQL command deletes and recreates records, which:
+- Breaks foreign key relationships and cascades
+- Can cause data loss in related tables
+- Triggers unnecessary constraint violations
+
+**Instead use proper INSERT/UPDATE logic**:
+- Check if record exists first with a SELECT query
+- Use INSERT for new records, UPDATE for existing records
+- Maintain referential integrity and avoid data loss
+
+Example pattern:
+```kotlin
+val exists = checkIfRecordExists(id)
+val query = if (exists) {
+    "UPDATE table SET ... WHERE id = ?"
+} else {
+    "INSERT INTO table (...) VALUES (...)"
+}
+```
