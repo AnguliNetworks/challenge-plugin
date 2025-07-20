@@ -55,24 +55,16 @@ class MigrationManager(
             
             // Get current schema version
             val currentVersion = getCurrentSchemaVersion()
-            plugin.logger.info("Current schema version: $currentVersion")
-            
-            // Log all available migrations for debugging
-            plugin.logger.info("Available migrations: ${migrations.map { "${it.version}: ${it.description}" }}")
             
             // Get pending migrations
             val pendingMigrations = migrations
                 .filter { it.version > currentVersion }
                 .sortedBy { it.version }
             
-            plugin.logger.info("Pending migrations: ${pendingMigrations.map { "${it.version}: ${it.description}" }}")
-            
             if (pendingMigrations.isEmpty()) {
-                plugin.logger.info("No pending migrations. Current schema version: ${getCurrentSchemaVersion()}")
+                plugin.logger.info("No pending migrations")
                 return
             }
-            
-            plugin.logger.info("Found ${pendingMigrations.size} pending migrations to execute")
             
             // Run pending migrations - STOP on first failure
             for (migration in pendingMigrations) {
@@ -89,7 +81,7 @@ class MigrationManager(
                 plugin.logger.info("Migration ${migration.version} completed successfully")
             }
             
-            plugin.logger.info("All migrations completed successfully. Current schema version: ${getCurrentSchemaVersion()}")
+            plugin.logger.info("All migrations completed successfully")
             
             // Force synchronization to disk so external tools can see the changes
             databaseDriver.sync()
@@ -114,21 +106,7 @@ class MigrationManager(
     
     private fun getCurrentSchemaVersion(): Int {
         return try {
-            plugin.logger.info("Querying current schema version...")
-            
-            // First, let's check if the table exists and what's in it
-            val count = databaseDriver.executeQuery("SELECT COUNT(*) as count FROM schema_migrations") { rs ->
-                if (rs.next()) rs.getInt("count") else 0
-            } ?: 0
-            plugin.logger.info("Found $count entries in schema_migrations table")
-            
-            // Check if the table exists at all  
-            val tableExists = databaseDriver.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'") { rs ->
-                rs.next()
-            } ?: false
-            plugin.logger.info("schema_migrations table exists: $tableExists")
-            
-            // List all tables to see what exists
+            // Check if database file exists with size > 0 but no tables found (corruption check)
             val tables = databaseDriver.executeQuery("SELECT name FROM sqlite_master WHERE type='table'") { rs ->
                 val tableList = mutableListOf<String>()
                 while (rs.next()) {
@@ -136,7 +114,6 @@ class MigrationManager(
                 }
                 tableList
             } ?: emptyList()
-            plugin.logger.info("All tables in database: $tables")
             
             // If database file exists with size > 0 but no tables found, it might be corrupted
             if (tables.isEmpty() && databaseDriver.getDatabaseFile().exists() && databaseDriver.getDatabaseFile().length() > 0) {
@@ -144,24 +121,11 @@ class MigrationManager(
                 throw SQLException("Database appears corrupted - contains data but no readable tables. Please delete the database file manually: ${databaseDriver.getDatabaseFile().absolutePath}")
             }
             
-            // Now let's see all versions in the table
-            val versions = databaseDriver.executeQuery("SELECT version, description FROM schema_migrations ORDER BY version") { rs ->
-                val versionList = mutableListOf<String>()
-                while (rs.next()) {
-                    versionList.add("${rs.getInt("version")}: ${rs.getString("description")}")
-                }
-                versionList
-            } ?: emptyList()
-            plugin.logger.info("Existing migrations in database: $versions")
-            
-            // Now get the max version
+            // Get the max version
             val maxVersion = databaseDriver.executeQuery("SELECT MAX(version) as version FROM schema_migrations") { rs ->
                 if (rs.next()) {
-                    val version = rs.getInt("version")
-                    plugin.logger.info("MAX version query returned: $version")
-                    version
+                    rs.getInt("version")
                 } else {
-                    plugin.logger.info("No rows found in MAX version query, returning version 0")
                     0
                 }
             } ?: 0
@@ -169,7 +133,6 @@ class MigrationManager(
             maxVersion
         } catch (e: SQLException) {
             plugin.logger.warning("Failed to query schema version: ${e.message}")
-            e.printStackTrace()
             0 // If table doesn't exist or query fails, assume version 0
         }
     }
@@ -178,23 +141,13 @@ class MigrationManager(
         val migration = migrations.find { it.version == version }
         val description = migration?.description ?: "Unknown migration"
         
-        plugin.logger.info("Updating schema version to $version: $description")
-        
         val rowsAffected = databaseDriver.executeUpdate(
             "INSERT INTO schema_migrations (version, description) VALUES (?, ?)",
             version, description
         )
         
-        if (rowsAffected > 0) {
-            plugin.logger.info("Successfully recorded migration $version in schema_migrations table")
-        } else {
+        if (rowsAffected <= 0) {
             plugin.logger.warning("Failed to record migration $version in schema_migrations table (0 rows affected)")
         }
-        
-        // Verify the insert worked by immediately querying back
-        val count = databaseDriver.executeQuery("SELECT COUNT(*) as count FROM schema_migrations WHERE version = ?", version) { rs ->
-            if (rs.next()) rs.getInt("count") else 0
-        } ?: 0
-        plugin.logger.info("Verification: Found $count entries for migration $version in schema_migrations table")
     }
 }

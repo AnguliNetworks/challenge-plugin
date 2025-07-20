@@ -136,16 +136,10 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
      * Checks if a player has saved data for a challenge
      */
     fun hasPlayerData(playerId: UUID, challengeId: UUID): Boolean {
-        plugin.logger.info("Checking hasPlayerData for player $playerId, challenge $challengeId")
-        
         // Check cache first
         if (cachedPlayerData[playerId]?.containsKey(challengeId) == true) {
-            plugin.logger.info("Found data in cache for player $playerId, challenge $challengeId")
             return true
         }
-        plugin.logger.info("No cached data found, checking database for player $playerId, challenge $challengeId")
-
-        // Check database for player data
 
         // Check database
         val result = plugin.databaseDriver.executeQuery(
@@ -153,12 +147,9 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             playerId.toString(),
             challengeId.toString()
         ) { rs ->
-            val hasData = rs.next()
-            plugin.logger.info("Database query result for player $playerId, challenge $challengeId: $hasData")
-            hasData
+            rs.next()
         } ?: false
         
-        plugin.logger.info("Final hasPlayerData result for player $playerId, challenge $challengeId: $result")
         return result
     }
 
@@ -168,19 +159,14 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
      * Returns null if no saved data exists.
      */
     fun findChallengeWithPlayerData(playerId: UUID): Challenge? {
-        plugin.logger.info("Looking for challenge data for player $playerId")
-        
         // First check cache for any cached data
         cachedPlayerData[playerId]?.let { challengeMap ->
             if (challengeMap.isNotEmpty()) {
                 // Player has cached data, find which challenge it belongs to
                 val challengeId = challengeMap.keys.first()
-                plugin.logger.info("Found cached data for player $playerId in challenge $challengeId")
                 return plugin.challengeManager.getChallenge(challengeId)
             }
         }
-
-        plugin.logger.info("No cached data found, querying database for player $playerId")
 
         // Query database once to find any challenge with player data
         val challengeId = plugin.databaseDriver.executeQuery(
@@ -190,14 +176,12 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             if (rs.next()) {
                 try {
                     val id = rs.getString("challenge_id")
-                    plugin.logger.info("Found database entry for player $playerId in challenge $id")
                     UUID.fromString(id)
                 } catch (e: Exception) {
                     plugin.logger.warning("Invalid challenge_id UUID in player data: ${e.message}")
                     null
                 }
             } else {
-                plugin.logger.info("No database entry found for player $playerId")
                 null
             }
         }
@@ -205,9 +189,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
         // Return the challenge object if found
         return challengeId?.let { 
             val challenge = plugin.challengeManager.getChallenge(it)
-            if (challenge != null) {
-                plugin.logger.info("Found challenge ${challenge.name} for player $playerId")
-            } else {
+            if (challenge == null) {
                 plugin.logger.warning("Challenge $it found in database but not loaded in memory for player $playerId")
             }
             challenge
@@ -308,33 +290,8 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             )
         }
 
-        plugin.logger.info("Attempting to save player data for ${playerData.uuid} to challenge ${playerData.challengeId}")
-        plugin.logger.info("Total operations to execute: ${operations.size}")
-        
         if (!plugin.databaseDriver.executeTransaction(operations)) {
             plugin.logger.severe("Failed to save player data to database for ${playerData.uuid}")
-            plugin.logger.severe("Operations that failed:")
-            operations.forEachIndexed { index, (sql, params) ->
-                plugin.logger.severe("  Operation $index: $sql")
-                plugin.logger.severe("  Parameters: ${params.joinToString(", ")}")
-            }
-        } else {
-            plugin.logger.info("Successfully saved player data for ${playerData.uuid} to challenge ${playerData.challengeId}")
-            
-            // Immediately verify the save worked
-            plugin.logger.info("Verifying save by querying database...")
-            val count = plugin.databaseDriver.executeQuery(
-                "SELECT COUNT(*) as count FROM player_challenge_data WHERE player_uuid = ? AND challenge_id = ?",
-                playerData.uuid.toString(),
-                playerData.challengeId.toString()
-            ) { rs ->
-                if (rs.next()) rs.getInt("count") else 0
-            } ?: 0
-            plugin.logger.info("Verification: Found $count entries in database for player ${playerData.uuid}, challenge ${playerData.challengeId}")
-            
-            // Force database sync to disk
-            plugin.databaseDriver.sync()
-            plugin.logger.info("Database synced to disk")
         }
     }
 

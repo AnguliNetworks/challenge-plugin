@@ -23,41 +23,23 @@ class DatabaseDriver(private val plugin: ChallengePluginPlugin) {
             // Ensure data folder exists
             plugin.dataFolder.mkdirs()
 
-            plugin.logger.info("Plugin data folder: ${plugin.dataFolder.absolutePath}")
-            plugin.logger.info("Database file path: ${databaseFile.absolutePath}")
-            plugin.logger.info("Database file exists: ${databaseFile.exists()}")
-            if (databaseFile.exists()) {
-                plugin.logger.info("Database file size: ${databaseFile.length()} bytes")
-            }
 
             // Load SQLite JDBC driver
             Class.forName("org.sqlite.JDBC")
 
             // Create connection
             val connectionString = "jdbc:sqlite:${databaseFile.absolutePath}"
-            plugin.logger.info("Connecting to database with: $connectionString")
             connection = DriverManager.getConnection(connectionString)
-            
-            plugin.logger.info("Database connection established: ${connection != null}")
-            plugin.logger.info("Database connection valid: ${connection?.isValid(5)}")
 
             // Enable foreign keys
             connection?.createStatement()?.use { stmt ->
                 stmt.execute("PRAGMA foreign_keys = ON")
-                plugin.logger.info("Foreign keys enabled")
-                
-                // Test if we can read basic SQLite info
-                val result = stmt.executeQuery("PRAGMA database_list")
-                while (result.next()) {
-                    plugin.logger.info("Database: name=${result.getString("name")}, file=${result.getString("file")}")
-                }
-                result.close()
             }
 
             // Run migrations - this will throw an exception if any migration fails
             migrationManager.runMigrations()
 
-            plugin.logger.info("Database initialized successfully at: ${databaseFile.absolutePath}")
+            plugin.logger.info("Database initialized successfully")
             return true
 
         } catch (e: Exception) {
@@ -173,14 +155,10 @@ class DatabaseDriver(private val plugin: ChallengePluginPlugin) {
         return try {
             val conn = getConnection() ?: return false
 
-            plugin.logger.info("Starting database transaction with ${operations.size} operations")
             conn.autoCommit = false
 
             try {
-                operations.forEachIndexed { index, (sql, params) ->
-                    plugin.logger.info("Executing operation $index: $sql")
-                    plugin.logger.info("Parameters: ${params.joinToString(", ")}")
-                    
+                operations.forEach { (sql, params) ->
                     conn.prepareStatement(sql).use { statement ->
                         params.forEachIndexed { paramIndex, param ->
                             when (param) {
@@ -193,17 +171,13 @@ class DatabaseDriver(private val plugin: ChallengePluginPlugin) {
                                 else -> statement.setObject(paramIndex + 1, param)
                             }
                         }
-                        val rowsAffected = statement.executeUpdate()
-                        plugin.logger.info("Operation $index affected $rowsAffected rows")
+                        statement.executeUpdate()
                     }
                 }
                 
-                plugin.logger.info("Committing transaction")
                 conn.commit()
-                plugin.logger.info("Transaction committed successfully")
                 true
             } catch (e: SQLException) {
-                plugin.logger.severe("Transaction failed, rolling back: ${e.message}")
                 conn.rollback()
                 throw e
             } finally {
@@ -236,14 +210,10 @@ class DatabaseDriver(private val plugin: ChallengePluginPlugin) {
      */
     fun sync() {
         try {
-            plugin.logger.info("Database sync requested for file: ${databaseFile.absolutePath}")
-            plugin.logger.info("Database file exists: ${databaseFile.exists()}, size: ${if (databaseFile.exists()) databaseFile.length() else 0} bytes")
-            
             // Execute PRAGMA synchronous to ensure data is written
             getConnection()?.createStatement()?.use { stmt ->
                 stmt.execute("PRAGMA synchronous = FULL")
                 stmt.execute("PRAGMA wal_checkpoint(FULL)")
-                plugin.logger.info("Executed PRAGMA synchronous and WAL checkpoint")
             }
         } catch (e: Exception) {
             plugin.logger.warning("Error during database sync: ${e.message}")

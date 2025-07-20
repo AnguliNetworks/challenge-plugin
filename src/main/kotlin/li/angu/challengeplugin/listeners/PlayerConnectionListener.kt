@@ -20,16 +20,23 @@ import java.util.UUID
 class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : Listener {
 
     @EventHandler
+    fun onPlayerJoin(event: PlayerJoinEvent) {
+        val player = event.player
+
+        // Always teleport player to the lobby first
+        plugin.lobbyManager.teleportToLobby(player)
+
+        // Send welcome message
+        player.sendMessage(plugin.languageManager.getMessage("lobby.welcome", player))
+    }
+
+    @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         val player = event.player
-        plugin.logger.info("Player ${player.name} (${player.uniqueId}) is quitting the server")
-
         val challenge = plugin.challengeManager.getPlayerChallenge(player)
-        plugin.logger.info("Player ${player.name} current challenge: ${challenge?.name ?: "none"}")
 
         // Save player data if they're in an active challenge
         if (challenge != null && challenge.isPlayerInChallenge(player)) {
-            plugin.logger.info("Saving player data for ${player.name} in challenge ${challenge.name}")
             // Save player data for the challenge
             plugin.playerDataManager.savePlayerData(player, challenge.id)
 
@@ -39,9 +46,6 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
             // Remove the player from the playerChallengeMap
             // This ensures they'll start in the lobby when reconnecting
             plugin.challengeManager.removePlayerFromChallenge(player.uniqueId)
-            plugin.logger.info("Player ${player.name} removed from challenge and mapping cleared")
-        } else {
-            plugin.logger.info("Player ${player.name} was not in a challenge, no data to save")
         }
     }
 

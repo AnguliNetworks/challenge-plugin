@@ -419,12 +419,9 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         }
 
         // Check if player has saved data for this challenge
-        plugin.logger.info("Checking for saved data for player ${player.name} (${player.uniqueId}) in challenge ${challenge.name} (${challenge.id})")
         if (plugin.playerDataManager.hasPlayerData(player.uniqueId, challenge.id)) {
-            plugin.logger.info("Found saved data for player ${player.name} in challenge ${challenge.name}, attempting restore")
             // Restore player data (inventory, location, etc.)
             if (plugin.playerDataManager.restorePlayerData(player, challenge.id)) {
-                plugin.logger.info("Successfully restored player data for ${player.name} in challenge ${challenge.name}")
                 // Add player to challenge without resetting
                 if (challenge.addPlayer(player)) {
                     playerChallengeMap[player.uniqueId] = challenge.id
@@ -439,8 +436,6 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             } else {
                 plugin.logger.warning("Failed to restore player data for ${player.name} in challenge ${challenge.name}")
             }
-        } else {
-            plugin.logger.info("No saved data found for player ${player.name} in challenge ${challenge.name}, starting fresh")
         }
 
         // If no saved data or restore failed, add player normally
