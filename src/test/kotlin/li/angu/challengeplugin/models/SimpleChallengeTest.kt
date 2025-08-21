@@ -24,7 +24,7 @@ class SimpleChallengeTest {
 
     @Test
     fun `test challenge creation with default values`() {
-        val challenge = Challenge(name = "Test Challenge", worldName = "test_world")
+        val challenge = Challenge(name = "Test Challenge", worldName = "test_world", creatorUuid = UUID.randomUUID())
         
         assertEquals("Test Challenge", challenge.name)
         assertEquals("test_world", challenge.worldName)
@@ -35,7 +35,7 @@ class SimpleChallengeTest {
     
     @Test
     fun `test adding and removing players`() {
-        val challenge = Challenge(name = "Test Challenge", worldName = "test_world")
+        val challenge = Challenge(name = "Test Challenge", worldName = "test_world", creatorUuid = UUID.randomUUID())
         val player = mock<Player>()
         val playerId = UUID.randomUUID()
         whenever(player.uniqueId).thenReturn(playerId)
@@ -53,7 +53,7 @@ class SimpleChallengeTest {
     
     @Test
     fun `test checking if player is in challenge`() {
-        val challenge = Challenge(name = "Test Challenge", worldName = "test_world")
+        val challenge = Challenge(name = "Test Challenge", worldName = "test_world", creatorUuid = UUID.randomUUID())
         val player = mock<Player>()
         val playerId = UUID.randomUUID()
         whenever(player.uniqueId).thenReturn(playerId)
@@ -70,7 +70,7 @@ class SimpleChallengeTest {
     
     @Test
     fun `test completing challenge`() {
-        val challenge = Challenge(name = "Test Challenge", worldName = "test_world")
+        val challenge = Challenge(name = "Test Challenge", worldName = "test_world", creatorUuid = UUID.randomUUID())
         
         challenge.complete()
         
@@ -80,7 +80,7 @@ class SimpleChallengeTest {
     
     @Test
     fun `test getting challenge duration when not started`() {
-        val challenge = Challenge(name = "Test Challenge", worldName = "test_world")
+        val challenge = Challenge(name = "Test Challenge", worldName = "test_world", creatorUuid = UUID.randomUUID())
         
         val duration = challenge.getEffectiveDuration()
         assertEquals(Duration.ZERO, duration)
@@ -88,7 +88,7 @@ class SimpleChallengeTest {
     
     @Test
     fun `test getting nether and end world names`() {
-        val challenge = Challenge(name = "Test Challenge", worldName = "test_world")
+        val challenge = Challenge(name = "Test Challenge", worldName = "test_world", creatorUuid = UUID.randomUUID())
         
         val netherWorldName = "${challenge.worldName}_nether"
         val endWorldName = "${challenge.worldName}_the_end"
