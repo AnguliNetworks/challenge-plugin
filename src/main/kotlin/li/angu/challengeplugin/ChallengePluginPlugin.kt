@@ -9,6 +9,7 @@ import li.angu.challengeplugin.managers.SettingsInventoryManager
 import li.angu.challengeplugin.managers.ChallengeMenuManager
 import li.angu.challengeplugin.managers.LobbyManager
 import li.angu.challengeplugin.managers.WorldPreparationManager
+import li.angu.challengeplugin.managers.ElytraManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.listeners.PlayerConnectionListener
 import li.angu.challengeplugin.listeners.PlayerHealthListener
@@ -28,6 +29,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var settingsInventoryManager: SettingsInventoryManager
     open lateinit var challengeMenuManager: ChallengeMenuManager
     open lateinit var lobbyManager: LobbyManager
+    open lateinit var elytraManager: ElytraManager
     open lateinit var blockDropListener: BlockDropListener
     open lateinit var worldPreparationManager: WorldPreparationManager
     open lateinit var experienceBorderListener: ExperienceBorderListener
@@ -66,9 +68,10 @@ open class ChallengePluginPlugin : JavaPlugin() {
         challengeMenuManager = ChallengeMenuManager(this)
         worldPreparationManager = WorldPreparationManager(this)
 
-        // Initialize lobby manager
+        // Initialize lobby manager and elytra manager
         lobbyManager = LobbyManager(this)
         lobbyManager.initialize()
+        elytraManager = ElytraManager(this)
 
         // Register commands
         // Main challenge commands
@@ -99,6 +102,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerHealthListener(this), this)
         server.pluginManager.registerEvents(PortalListener(this), this)
         server.pluginManager.registerEvents(LobbyProtectionListener(this), this)
+        server.pluginManager.registerEvents(elytraManager, this)
         blockDropListener = BlockDropListener(this)
         server.pluginManager.registerEvents(blockDropListener, this)
 
@@ -130,6 +134,11 @@ open class ChallengePluginPlugin : JavaPlugin() {
         settingsInventoryManager.cleanup()
         challengeMenuManager.cleanup()
         experienceBorderListener.cleanup()
+
+        // Unregister event listeners
+        if (::elytraManager.isInitialized) {
+            org.bukkit.event.HandlerList.unregisterAll(elytraManager)
+        }
 
         // Close database connection
         if (::databaseDriver.isInitialized) {

@@ -17,6 +17,12 @@ lobby:
   welcome: "§a§lWelcome to the Challenge Server!"
   teleported: "§aTeleported to lobby."
   spawn_set: "§aLobby spawn set to your current location."
+  elytra:
+    name: "§6§lLobby Wings"
+    lore: "§7Fly around the lobby with these special wings!"
+  rocket:
+    name: "§b§lInfinite Rocket"
+    lore: "§7Level 3 rocket that never runs out!"
 
 challenge:
   created: "§aChallenge '%name%' created successfully!"

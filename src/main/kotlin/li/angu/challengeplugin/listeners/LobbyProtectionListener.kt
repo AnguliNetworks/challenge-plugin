@@ -114,13 +114,10 @@ class LobbyProtectionListener(private val plugin: ChallengePluginPlugin) : Liste
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
         if (isInLobby(player)) {
-            // Only allow clicking on the menu item
-            val item = event.currentItem
-            if (item != null && !plugin.lobbyManager.isMenuItem(item)) {
-                // Allow moving the menu item around but prevent other interactions
-                if (event.slot != 0) {
-                    event.isCancelled = true
-                }
+            // Allow all inventory interactions in lobby - players should be able to organize their items
+            // Only prevent interactions with external inventories (chests, etc.)
+            if (event.clickedInventory != player.inventory) {
+                event.isCancelled = true
             }
         }
     }

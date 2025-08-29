@@ -125,6 +125,9 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
 
         // Set to slot 1 (index 0)
         player.inventory.setItem(0, menuItem)
+
+        // Equip flight gear (Elytra and rockets) for lobby
+        plugin.elytraManager.equipLobbyFlightGear(player)
     }
 
     /**

@@ -73,6 +73,9 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
                 player.gameMode = org.bukkit.GameMode.SURVIVAL
                 plugin.lobbyManager.setupLobbyInventory(player)
             }
+        } else {
+            // Player left the lobby world, remove flight gear
+            plugin.elytraManager.removeLobbyFlightGear(player)
         }
     }
 
