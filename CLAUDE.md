@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Build JAR: `./gradlew jar`
 
 ## Development Workflow
-- Do not run build commands automatically after changes - let the user run them when ready to test
+- After completing features or fixes, use `./gradlew deployToTestServer -x test` to deploy directly to test server for in-game testing
 - The user will handle testing in their Minecraft environment
 
 ## Code Style Guidelines

@@ -110,7 +110,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             player.addPotionEffect(effect)
         }
 
-        // Make sure world is loaded before teleporting
+        // Make sure world and chunk are loaded before teleporting
         val world = Bukkit.getWorld(playerData.location.world?.name ?: return false)
         if (world != null) {
             val location = Location(
@@ -121,6 +121,16 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
                 playerData.location.yaw,
                 playerData.location.pitch
             )
+            
+            // Ensure the chunk at the player's location is loaded
+            val chunkX = location.blockX shr 4
+            val chunkZ = location.blockZ shr 4
+            val chunk = world.getChunkAt(chunkX, chunkZ)
+            if (!chunk.isLoaded) {
+                chunk.load(true) // Load synchronously and generate if needed
+                plugin.logger.info("Loaded chunk ($chunkX, $chunkZ) for player ${player.name} teleportation")
+            }
+            
             player.teleport(location)
         }
 
