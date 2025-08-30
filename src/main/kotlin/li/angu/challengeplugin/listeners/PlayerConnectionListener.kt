@@ -67,12 +67,9 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
 
         // Check if player entered the lobby world
         if (plugin.lobbyManager.isLobbyWorld(toWorld.name)) {
-            // Check if the player isn't coming from a challenge world
-            if (challenge == null) {
-                // Set player to survival mode and give them the menu item
-                player.gameMode = org.bukkit.GameMode.SURVIVAL
-                plugin.lobbyManager.setupLobbyInventory(player)
-            }
+            // Always reset player stats and inventory when entering lobby
+            player.gameMode = org.bukkit.GameMode.SURVIVAL
+            plugin.lobbyManager.setupLobbyInventory(player)
         } else {
             // Player left the lobby world, remove flight gear
             plugin.elytraManager.removeLobbyFlightGear(player)

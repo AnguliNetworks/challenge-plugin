@@ -120,6 +120,18 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
         // Clear inventory
         player.inventory.clear()
 
+        // Reset player stats to lobby defaults
+        player.level = 0
+        player.exp = 0f
+        player.health = 20.0
+        player.foodLevel = 20
+        player.saturation = 20f
+        
+        // Remove any active potion effects
+        player.activePotionEffects.forEach { effect ->
+            player.removePotionEffect(effect.type)
+        }
+
         // Create challenge menu star
         val menuItem = createMenuItem(player)
 

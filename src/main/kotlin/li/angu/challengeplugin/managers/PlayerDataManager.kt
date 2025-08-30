@@ -45,6 +45,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             level = player.level,
             health = player.health,
             foodLevel = player.foodLevel,
+            saturation = player.saturation,
             gameMode = player.gameMode,
             potionEffects = player.activePotionEffects.toList()
         )
@@ -100,6 +101,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
         player.level = playerData.level
         player.health = playerData.health
         player.foodLevel = playerData.foodLevel
+        player.saturation = playerData.saturation
         player.gameMode = playerData.gameMode
 
         // Clear existing effects and apply saved effects
@@ -253,8 +255,8 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             "INSERT OR REPLACE INTO player_challenge_data " +
             "(player_uuid, challenge_id, inventory_data, ender_chest_data, location_world, " +
             "location_x, location_y, location_z, location_yaw, location_pitch, health, " +
-            "food_level, experience_points, experience_level, game_mode, saved_at) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" to arrayOf<Any?>(
+            "food_level, saturation, experience_points, experience_level, game_mode, saved_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" to arrayOf<Any?>(
                 playerData.uuid.toString(),
                 playerData.challengeId.toString(),
                 itemStackArrayToBase64(playerData.inventory),
@@ -267,6 +269,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
                 playerData.location.pitch.toDouble(),
                 playerData.health,
                 playerData.foodLevel,
+                playerData.saturation.toDouble(),
                 playerData.exp.toInt(),
                 playerData.level,
                 playerData.gameMode.name,
@@ -311,7 +314,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
             val playerData = plugin.databaseDriver.executeQuery(
                 """
                 SELECT inventory_data, armor_data, ender_chest_data, location_world, location_x, location_y, location_z,
-                       location_yaw, location_pitch, health, food_level, experience_points, experience_level, game_mode
+                       location_yaw, location_pitch, health, food_level, saturation, experience_points, experience_level, game_mode
                 FROM player_challenge_data 
                 WHERE player_uuid = ? AND challenge_id = ?
                 """.trimIndent(),
@@ -394,6 +397,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
                         level = rs.getInt("experience_level"),
                         health = rs.getDouble("health"),
                         foodLevel = rs.getInt("food_level"),
+                        saturation = rs.getFloat("saturation"),
                         gameMode = gameMode,
                         potionEffects = emptyList() // Will be loaded separately
                     )
@@ -514,6 +518,7 @@ class PlayerDataManager(private val plugin: ChallengePluginPlugin) {
         val level: Int,
         val health: Double,
         val foodLevel: Int,
+        val saturation: Float,
         val gameMode: GameMode = GameMode.SURVIVAL,
         val potionEffects: List<PotionEffect> = emptyList()
     ) {

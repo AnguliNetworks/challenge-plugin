@@ -10,6 +10,7 @@ import li.angu.challengeplugin.database.migrations.Migration006UpdateChallengesT
 import li.angu.challengeplugin.database.migrations.Migration007UpdateChallengeSettings
 import li.angu.challengeplugin.database.migrations.Migration008AddPotionEffects
 import li.angu.challengeplugin.database.migrations.Migration009AddArmorData
+import li.angu.challengeplugin.database.migrations.Migration010AddSaturation
 import java.sql.SQLException
 import java.util.logging.Level
 
@@ -27,7 +28,8 @@ class MigrationManager(
         Migration006UpdateChallengesTable(),
         Migration007UpdateChallengeSettings(),
         Migration008AddPotionEffects(),
-        Migration009AddArmorData()
+        Migration009AddArmorData(),
+        Migration010AddSaturation()
     )
     
     /**
