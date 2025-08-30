@@ -8,6 +8,7 @@ import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.GameRule
+import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -15,6 +16,36 @@ import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 import java.io.File
+
+    data class ChallengeMenuData(
+    val id: UUID,
+    val name: String,
+    val status: ChallengeStatus,
+    val playerCount: Int,
+    val startedAt: Instant?,
+    val pausedAt: Instant?,
+    val totalPausedDuration: Duration,
+    val playerStatus: String
+) {
+    fun getFormattedDuration(): String {
+        if (startedAt == null) {
+            return "Not started"
+        }
+
+        val end = if (status != ChallengeStatus.ACTIVE) {
+            Instant.now() // For completed/failed challenges, use current time as end
+        } else if (pausedAt != null) {
+            pausedAt
+        } else {
+            Instant.now()
+        }
+
+        val rawDuration = Duration.between(startedAt, end)
+        val effectiveDuration = rawDuration.minus(totalPausedDuration)
+
+        return li.angu.challengeplugin.utils.TimeFormatter.formatDuration(effectiveDuration)
+    }
+}
 
 class ChallengeManager(private val plugin: ChallengePluginPlugin) {
 
@@ -98,7 +129,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                     }
                 }
             }
-            
+
             plugin.logger.info("Loaded ${activeChallenges.size} challenges from database")
 
             // Load players for each challenge
@@ -537,6 +568,9 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
 
         challenge.complete()
 
+        // Save updated status to database
+        saveChallengeToDatabase(challenge)
+
         // Handle rewards or other completion logic
         Bukkit.getOnlinePlayers().forEach { player ->
             if (challenge.isPlayerInChallenge(player)) {
@@ -648,5 +682,98 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             plugin.logger.warning("Failed to load world set $worldName: ${e.message}")
             null
         }
+    }
+
+    /**
+     * Get challenges for menu with minimal data and player status using efficient JOIN query
+     */
+    fun getChallengesForMenu(playerId: UUID, showAll: Boolean, limit: Int = 36): List<ChallengeMenuData> {
+        val query = if (showAll) {
+            """
+            SELECT c.id, c.name, c.status, c.started_at, c.paused_at, c.total_paused_duration,
+                   COUNT(cp.player_uuid) as player_count,
+                   pcd.game_mode, pcd.saved_at
+            FROM challenges c
+            LEFT JOIN challenge_participants cp ON c.id = cp.challenge_id
+            LEFT JOIN player_challenge_data pcd ON c.id = pcd.challenge_id AND pcd.player_uuid = ?
+            GROUP BY c.id, c.name, c.status, c.started_at, c.paused_at, c.total_paused_duration, pcd.game_mode, pcd.saved_at
+            ORDER BY (SELECT MAX(pcd2.saved_at) FROM player_challenge_data pcd2 WHERE pcd2.challenge_id = c.id) DESC NULLS LAST
+            LIMIT ?
+            """.trimIndent()
+        } else {
+            """
+            SELECT c.id, c.name, c.status, c.started_at, c.paused_at, c.total_paused_duration,
+                   COUNT(cp.player_uuid) as player_count,
+                   pcd.game_mode, pcd.saved_at
+            FROM challenges c
+            LEFT JOIN challenge_participants cp ON c.id = cp.challenge_id
+            LEFT JOIN player_challenge_data pcd ON c.id = pcd.challenge_id AND pcd.player_uuid = ?
+            LEFT JOIN challenge_participants cp2 ON c.id = cp2.challenge_id AND cp2.player_uuid = ?
+            GROUP BY c.id, c.name, c.status, c.started_at, c.paused_at, c.total_paused_duration, pcd.game_mode, pcd.saved_at
+            ORDER BY COALESCE(pcd.saved_at, cp.left_at, cp.joined_at) DESC
+            LIMIT ?
+            """.trimIndent()
+        }
+
+        val resultCallback = { rs: java.sql.ResultSet ->
+            val results = mutableListOf<ChallengeMenuData>()
+
+            while (rs.next()) {
+                try {
+                    val challengeId = UUID.fromString(rs.getString("id"))
+                    val status = ChallengeStatus.valueOf(rs.getString("status"))
+
+                    val startedAt = rs.getTimestamp("started_at")?.toInstant()
+                    val pausedAt = rs.getTimestamp("paused_at")?.toInstant()
+                    val totalPausedDuration = Duration.ofSeconds(rs.getLong("total_paused_duration"))
+
+                    val playerStatus = determinePlayerStatusFromDB(playerId, challengeId, status, rs.getString("game_mode"))
+
+                    results.add(ChallengeMenuData(
+                        id = challengeId,
+                        name = rs.getString("name"),
+                        status = status,
+                        playerCount = rs.getInt("player_count"),
+                        startedAt = startedAt,
+                        pausedAt = pausedAt,
+                        totalPausedDuration = totalPausedDuration,
+                        playerStatus = playerStatus
+                    ))
+
+                } catch (e: Exception) {
+                    plugin.logger.warning("Failed to load challenge menu data: ${e.message}")
+                }
+            }
+            results
+        }
+
+        return if (showAll) {
+            plugin.databaseDriver.executeQuery(query, playerId.toString(), limit, processor = resultCallback)
+        } else {
+            plugin.databaseDriver.executeQuery(query, playerId.toString(), playerId.toString(), limit, processor = resultCallback)
+        } ?: emptyList()
+    }
+
+    private fun determinePlayerStatusFromDB(playerId: UUID, challengeId: UUID, challengeStatus: ChallengeStatus, savedGameMode: String?): String {
+        // Check if player is currently active (in memory)
+        val challenge = activeChallenges[challengeId]
+        val player = plugin.server.getPlayer(playerId)
+        if (challenge != null && player != null && challenge.isPlayerInChallenge(player)) {
+            return "active"
+        }
+
+        // Check if player has saved data
+        if (savedGameMode != null) {
+            return when (challengeStatus) {
+                ChallengeStatus.COMPLETED -> "completed"
+                ChallengeStatus.FAILED -> "failed"
+                ChallengeStatus.ACTIVE -> {
+                    // Challenge is still active, check if player died (spectator mode)
+                    if (savedGameMode == "SPECTATOR") "failed" else "active"
+                }
+            }
+        }
+
+        return "not_joined"
     }
 }

@@ -5,6 +5,7 @@ import li.angu.challengeplugin.models.Challenge
 import li.angu.challengeplugin.models.ChallengeStatus
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
@@ -14,13 +15,15 @@ import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
+import org.bukkit.persistence.PersistentDataType
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener {
 
     private val playerMenus = ConcurrentHashMap<UUID, Inventory>()
-    private val challengesPerInventory = ConcurrentHashMap<Inventory, List<Challenge>>()
+    private val challengesPerInventory = ConcurrentHashMap<Inventory, List<ChallengeMenuData>>()
+    private val filterToggleKey = NamespacedKey(plugin, "filter_show_all")
     
     init {
         plugin.server.pluginManager.registerEvents(this, plugin)
@@ -32,7 +35,7 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
         challengesPerInventory.clear()
     }
     
-    fun openMainMenu(player: Player) {
+    fun openMainMenu(player: Player, showAll: Boolean = false) {
         val inventory = Bukkit.createInventory(
             player,
             54, // 6 rows
@@ -56,7 +59,11 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
         createMeta.setDisplayName(plugin.languageManager.getMessage("challenge.menu.create", player))
         createMeta.lore = listOf(plugin.languageManager.getMessage("challenge.menu.create_lore", player))
         createItem.itemMeta = createMeta
-        inventory.setItem(4, createItem)
+        inventory.setItem(0, createItem)
+        
+        // Filter toggle button (slot 4)
+        val filterItem = createFilterToggleItem(player, showAll)
+        inventory.setItem(4, filterItem)
         
         // Create Leave Challenge button
         val leaveItem = ItemStack(Material.BARRIER)
@@ -66,8 +73,8 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
         leaveItem.itemMeta = leaveMeta
         inventory.setItem(8, leaveItem)
         
-        // Get all active challenges
-        val challenges = plugin.challengeManager.getActiveChallenges()
+        // Get challenges using efficient database query
+        val challenges = plugin.challengeManager.getChallengesForMenu(player.uniqueId, showAll)
         val playerCurrentChallenge = plugin.challengeManager.getPlayerChallenge(player)
         
         // Store the challenges for this inventory so we can retrieve them in the click handler
@@ -75,15 +82,15 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
         
         // Add challenges to inventory
         if (challenges.isNotEmpty()) {
-            challenges.forEachIndexed { index, challenge ->
+            challenges.forEachIndexed { index, challengeData ->
                 // Start at slot 18 (third row) and fill rows from there
                 val slot = 18 + index
                 
                 // Skip if we've reached the end of the inventory
                 if (slot >= inventory.size) return@forEachIndexed
                 
-                val isCurrentChallenge = playerCurrentChallenge?.id == challenge.id
-                val challengeItem = createChallengeItem(challenge, player, isCurrentChallenge)
+                val isCurrentChallenge = playerCurrentChallenge?.id == challengeData.id
+                val challengeItem = createChallengeItemFromData(challengeData, player, isCurrentChallenge)
                 inventory.setItem(slot, challengeItem)
             }
         } else {
@@ -102,43 +109,63 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
         player.openInventory(inventory)
     }
     
-    private fun createChallengeItem(challenge: Challenge, player: Player, isCurrentChallenge: Boolean): ItemStack {
-        // Choose material based on whether this is the player's current challenge
-        val material = when {
-            isCurrentChallenge -> Material.ENCHANTED_BOOK
-            else -> Material.BOOK
+    private fun createFilterToggleItem(player: Player, showAll: Boolean): ItemStack {
+        val item = ItemStack(Material.PLAYER_HEAD)
+        val meta = item.itemMeta ?: Bukkit.getItemFactory().getItemMeta(Material.PLAYER_HEAD)
+        
+        // Store filter state in persistent data
+        meta.persistentDataContainer.set(filterToggleKey, PersistentDataType.BYTE, if (showAll) 1 else 0)
+        
+        if (showAll) {
+            meta.setDisplayName(plugin.languageManager.getMessage("challenge.menu.filter_all", player))
+            meta.lore = listOf(plugin.languageManager.getMessage("challenge.menu.filter_all_lore", player))
+        } else {
+            meta.setDisplayName(plugin.languageManager.getMessage("challenge.menu.filter_your", player))
+            meta.lore = listOf(plugin.languageManager.getMessage("challenge.menu.filter_your_lore", player))
+            
+            // Set to player's head
+            if (meta is org.bukkit.inventory.meta.SkullMeta) {
+                meta.owningPlayer = player
+            }
         }
+        
+        item.itemMeta = meta
+        return item
+    }
+    
+    private fun createChallengeItemFromData(challengeData: ChallengeMenuData, player: Player, isCurrentChallenge: Boolean): ItemStack {
+        val material = if (isCurrentChallenge) Material.ENCHANTED_BOOK else Material.BOOK
         
         val item = ItemStack(material)
         val meta = item.itemMeta ?: Bukkit.getItemFactory().getItemMeta(material)
         
         meta.setDisplayName(
             if (isCurrentChallenge) 
-                plugin.languageManager.getMessage("challenge.menu.current_challenge", player, "name" to challenge.name)
+                plugin.languageManager.getMessage("challenge.menu.current_challenge", player, "name" to challengeData.name)
             else 
-                plugin.languageManager.getMessage("challenge.menu.challenge", player, "name" to challenge.name)
+                plugin.languageManager.getMessage("challenge.menu.challenge", player, "name" to challengeData.name)
         )
         
         val loreList = mutableListOf<String>()
         
         // Challenge ID
-        loreList.add(plugin.languageManager.getMessage("challenge.menu.id", player, "id" to challenge.id.toString()))
-        
-        // Challenge status
-        val statusKey = when(challenge.status) {
-            ChallengeStatus.ACTIVE -> "status.active"
-            ChallengeStatus.COMPLETED -> "status.completed"
-            ChallengeStatus.FAILED -> "status.failed"
-        }
-        loreList.add(plugin.languageManager.getMessage("challenge.menu.status", player, 
-            "status" to plugin.languageManager.getMessage(statusKey, player)))
+        loreList.add(plugin.languageManager.getMessage("challenge.menu.id", player, "id" to challengeData.id.toString()))
         
         // Players
-        loreList.add(plugin.languageManager.getMessage("challenge.menu.players", player, "count" to challenge.players.size.toString()))
+        loreList.add(plugin.languageManager.getMessage("challenge.menu.players", player, "count" to challengeData.playerCount.toString()))
+        
+        // Player status for this challenge
+        val playerStatusMessage = when(challengeData.playerStatus) {
+            "active" -> plugin.languageManager.getMessage("player_status.active", player)
+            "failed" -> plugin.languageManager.getMessage("player_status.failed", player)
+            "completed" -> plugin.languageManager.getMessage("player_status.completed", player)
+            else -> plugin.languageManager.getMessage("player_status.not_joined", player)
+        }
+        loreList.add(plugin.languageManager.getMessage("challenge.menu.your_status", player, "status" to playerStatusMessage))
         
         // Duration (if started)
-        if (challenge.startedAt != null) {
-            loreList.add(plugin.languageManager.getMessage("challenge.menu.duration", player, "time" to challenge.getFormattedDuration()))
+        if (challengeData.startedAt != null) {
+            loreList.add(plugin.languageManager.getMessage("challenge.menu.duration", player, "time" to challengeData.getFormattedDuration()))
         }
         
         // Action text
@@ -154,6 +181,7 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
         item.itemMeta = meta
         return item
     }
+    
     
     @EventHandler
     fun onInventoryClick(event: InventoryClickEvent) {
@@ -171,9 +199,19 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
         
         when (event.slot) {
             // Create Challenge button
-            4 -> {
+            0 -> {
                 player.closeInventory()
                 player.performCommand("create ") // Open create name prompt
+            }
+            
+            // Filter Toggle button
+            4 -> {
+                val filterItem = event.currentItem ?: return
+                val currentShowAll = filterItem.itemMeta?.persistentDataContainer?.get(filterToggleKey, PersistentDataType.BYTE) == 1.toByte()
+                
+                // Toggle filter and refresh menu
+                player.closeInventory()
+                openMainMenu(player, !currentShowAll)
             }
             
             // Leave Challenge button
@@ -202,15 +240,15 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
                 // Calculate index in the challenges list
                 val index = event.slot - 18
                 if (index >= 0 && index < challenges.size) {
-                    val challenge = challenges[index]
+                    val challengeData = challenges[index]
                     val currentChallenge = plugin.challengeManager.getPlayerChallenge(player)
                     
-                    if (currentChallenge?.id == challenge.id) {
+                    if (currentChallenge?.id == challengeData.id) {
                         // Player clicked their current challenge, leave it
-                        plugin.playerDataManager.savePlayerData(player, challenge.id)
+                        plugin.playerDataManager.savePlayerData(player, challengeData.id)
                         
                         if (plugin.challengeManager.leaveChallenge(player)) {
-                            player.sendMessage(plugin.languageManager.getMessage("challenge.left", player, "name" to challenge.name))
+                            player.sendMessage(plugin.languageManager.getMessage("challenge.left", player, "name" to challengeData.name))
                             
                             // Refresh the menu
                             player.closeInventory()
@@ -220,13 +258,15 @@ class ChallengeMenuManager(private val plugin: ChallengePluginPlugin) : Listener
                         }
                     } else {
                         // Player clicked a different challenge, join it
-                        if (challenge.status != ChallengeStatus.ACTIVE) {
+                        if (challengeData.status != ChallengeStatus.ACTIVE) {
                             player.sendMessage(plugin.languageManager.getMessage("challenge.already_completed", player))
                             return
                         }
                         
-                        if (plugin.challengeManager.joinChallenge(player, challenge)) {
-                            player.sendMessage(plugin.languageManager.getMessage("challenge.joined", player, "name" to challenge.name))
+                        // Get full challenge object from memory to join
+                        val fullChallenge = plugin.challengeManager.getChallenge(challengeData.id)
+                        if (fullChallenge != null && plugin.challengeManager.joinChallenge(player, fullChallenge)) {
+                            player.sendMessage(plugin.languageManager.getMessage("challenge.joined", player, "name" to challengeData.name))
                             
                             // Close the menu
                             player.closeInventory()

@@ -86,11 +86,16 @@ challenge:
     create_lore: "§7Click to create a new challenge"
     leave: "§c§lLeave Challenge"
     leave_lore: "§7Click to leave your current challenge"
+    filter_your: "§6§lYour Challenges"
+    filter_your_lore: "§7Click to show all challenges"
+    filter_all: "§e§lAll Challenges"
+    filter_all_lore: "§7Click to show only your challenges"
     challenge: "§f%name%"
     current_challenge: "§a§l%name%"
     id: "§7ID: §f%id%"
     status: "§7Status: §f%status%"
     players: "§7Players: §f%count%"
+    your_status: "§7Your Status: §f%status%"
     duration: "§7Duration: §f%time%"
     click_to_join: "§7Click to join this challenge"
     click_to_leave: "§c§lClick to leave this challenge"
@@ -102,6 +107,12 @@ status:
   active: "§aActive"
   completed: "§6Completed"
   failed: "§cFailed"
+
+player_status:
+  not_joined: "§7Not joined"
+  active: "§aActive"
+  failed: "§cFailed"
+  completed: "§6Completed"
 
 command:
   player_only: "§cThis command can only be used by players"

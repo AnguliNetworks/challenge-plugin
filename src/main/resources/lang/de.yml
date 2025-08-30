@@ -86,11 +86,16 @@ challenge:
     create_lore: "§7Klicke, um eine neue Herausforderung zu erstellen"
     leave: "§c§lHerausforderung verlassen"
     leave_lore: "§7Klicke, um deine aktuelle Herausforderung zu verlassen"
+    filter_your: "§6§lDeine Herausforderungen"
+    filter_your_lore: "§7Klicke, um alle Herausforderungen zu zeigen"
+    filter_all: "§e§lAlle Herausforderungen"
+    filter_all_lore: "§7Klicke, um nur deine Herausforderungen zu zeigen"
     challenge: "§f%name%"
     current_challenge: "§a§l%name%"
     id: "§7ID: §f%id%"
     status: "§7Status: §f%status%"
     players: "§7Spieler: §f%count%"
+    your_status: "§7Dein Status: §f%status%"
     duration: "§7Dauer: §f%time%"
     click_to_join: "§7Klicke, um dieser Herausforderung beizutreten"
     click_to_leave: "§c§lKlicke, um diese Herausforderung zu verlassen"
@@ -102,6 +107,12 @@ status:
   active: "§aAktiv"
   completed: "§6Abgeschlossen"
   failed: "§cFehlgeschlagen"
+
+player_status:
+  not_joined: "§7Nicht beigetreten"
+  active: "§aAktiv"
+  failed: "§cFehlgeschlagen"
+  completed: "§6Abgeschlossen"
 
 command:
   player_only: "§cDieser Befehl kann nur von Spielern verwendet werden"
