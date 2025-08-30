@@ -114,6 +114,9 @@ player_status:
   failed: "§cFehlgeschlagen"
   completed: "§6Abgeschlossen"
 
+chat:
+  format: "%player%: %message%"
+
 command:
   player_only: "§cDieser Befehl kann nur von Spielern verwendet werden"
   pause:
