@@ -94,7 +94,7 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
     @EventHandler
     fun onEntityDamage(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
-        
+
         // Check if player is in lobby world
         if (plugin.lobbyManager.isLobbyWorld(player.world.name)) {
             // Cancel all damage in lobby
@@ -106,12 +106,25 @@ class PlayerConnectionListener(private val plugin: ChallengePluginPlugin) : List
     fun onPlayerMove(event: PlayerMoveEvent) {
         val player = event.player
         val to = event.to ?: return
-        
-        // Check if player is in lobby world and fell below y=0
-        if (plugin.lobbyManager.isLobbyWorld(player.world.name) && to.y < 0) {
-            // Teleport back to lobby spawn
-            plugin.lobbyManager.getLobbySpawn()?.let { spawn ->
-                player.teleport(spawn)
+
+        // Check if player is in lobby world
+        if (plugin.lobbyManager.isLobbyWorld(player.world.name)) {
+            val lobbySpawn = plugin.lobbyManager.getLobbySpawn()
+
+            // Check if player fell below y=0
+            if (to.y < 0 || to.y > 256) {
+                lobbySpawn?.let { spawn ->
+                    player.teleport(spawn)
+                }
+                return
+            }
+
+            // Check if player is more than 500 blocks away from lobby spawn
+            if (lobbySpawn != null) {
+                val distance = to.distance(lobbySpawn)
+                if (distance > 175.0) {
+                    player.teleport(lobbySpawn)
+                }
             }
         }
     }
