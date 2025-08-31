@@ -162,6 +162,7 @@ class Challenge(
         player.gameMode = GameMode.SURVIVAL
         player.health = 20.0
         player.foodLevel = 20
+        player.saturation = 6f
         player.exp = 0f
         player.level = 0
         player.inventory.clear()
