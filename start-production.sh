@@ -2,9 +2,27 @@
 
 # Production Minecraft Server Startup Script
 # Automatically downloads latest plugin release from GitHub before starting
+# Usage: ./script.sh <server-jar-file>
+
+# Check if server file argument is provided
+if [ $# -eq 0 ]; then
+    echo "Error: No server file specified"
+    echo "Usage: $0 <server-jar-file>"
+    echo "Example: $0 paper-1.21.4.jar"
+    exit 1
+fi
+
+SERVER_JAR="$1"
+
+# Check if server file exists
+if [ ! -f "$SERVER_JAR" ]; then
+    echo "Error: Server file '$SERVER_JAR' not found"
+    exit 1
+fi
 
 echo "=== Production Server Startup ==="
 echo "$(date): Starting production server with auto-update..."
+echo "$(date): Using server file: $SERVER_JAR"
 
 # Configuration
 GITHUB_REPO="AnguliNetworks/challenge-plugin"
@@ -27,7 +45,7 @@ if [ -n "$LATEST_RELEASE_URL" ]; then
     VERSION_TAG=$(echo "$LATEST_RELEASE_URL" | grep -o 'v[^/]*' | tail -1)
     echo "$(date): Found release: $VERSION_TAG"
     echo "$(date): Downloading from: $LATEST_RELEASE_URL"
-    
+
     # Download the latest plugin JAR
     if curl -L -o "$PLUGIN_DIR/$PLUGIN_NAME" "$LATEST_RELEASE_URL"; then
         echo "$(date): Plugin updated successfully to $VERSION_TAG!"
@@ -40,14 +58,5 @@ fi
 
 echo "$(date): Starting Minecraft server..."
 
-# Start the server with production settings
-nohup java -Xms3G -Xmx4G -jar paper-1.21.4.jar --nogui > minecraft.log 2>&1 &
-
-# Get the process ID
-SERVER_PID=$!
-echo "$(date): Server started with PID: $SERVER_PID"
-echo "$SERVER_PID" > server.pid
-
-echo "=== Server startup complete ==="
-echo "Monitor logs with: tail -f minecraft.log"
-echo "Stop server with: kill \$(cat server.pid)"
+# Start the server with production settings using the provided server file
+java -Xms12288M -Xmx12288M -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:G1HeapWastePercent=5 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCCountTarget=4 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1NewSizePercent=30 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:G1ReservePercent=20 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxGCPauseMillis=200 -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=32 -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true -jar "$SERVER_JAR" nogui

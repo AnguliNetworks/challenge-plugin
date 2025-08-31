@@ -84,7 +84,8 @@ open class ChallengePluginPlugin : JavaPlugin() {
         registerCommand("info", InfoCommand(this))
         registerCommand("delete", DeleteCommand(this))
         registerCommand("challenge", ChallengeCommand(this))
-        registerCommand("prepare", PrepareWorldCommand(this))
+        // Register prepare command directly since it doesn't extend BaseCommand
+        getCommand("prepare")?.setExecutor(PrepareWorldCommand(this))
 
         // Lobby commands
         registerCommand("lobby", LobbyCommand(this))
