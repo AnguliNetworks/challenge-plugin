@@ -6,6 +6,7 @@ import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.GameRule
+import org.popcraft.chunky.api.ChunkyAPI
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -97,48 +98,8 @@ class WorldPreparationManager(private val plugin: ChallengePluginPlugin) {
                         difficulty = org.bukkit.Difficulty.HARD
                     }
 
-                    // Run this on main thread after a delay to ensure spawn chunks are generated
-                    Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-                        // Unload all the worlds
-                        Bukkit.unloadWorld(world, true)
-                        netherWorld?.let { Bukkit.unloadWorld(it, true) }
-                        endWorld?.let { Bukkit.unloadWorld(it, true) }
-
-                        // Now move these worlds to our preparation folder
-                        Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
-                            try {
-                                // Get server's world container (where worlds are saved)
-                                val serverWorldContainer = plugin.server.worldContainer
-
-                                // Create destination folders in our plugin's worlds folder
-                                val destMainFolder = File(worldsFolder, worldName)
-                                val destNetherFolder = File(worldsFolder, netherName)
-                                val destEndFolder = File(worldsFolder, endName)
-
-                                destMainFolder.mkdirs()
-                                destNetherFolder.mkdirs()
-                                destEndFolder.mkdirs()
-
-                                // Move worlds from server folder to our plugin's folder
-                                val sourceMainFolder = File(serverWorldContainer, worldName)
-                                val sourceNetherFolder = File(serverWorldContainer, netherName)
-                                val sourceEndFolder = File(serverWorldContainer, endName)
-
-                                if (moveWorldFolder(sourceMainFolder, destMainFolder) &&
-                                    moveWorldFolder(sourceNetherFolder, destNetherFolder) &&
-                                    moveWorldFolder(sourceEndFolder, destEndFolder)) {
-                                    plugin.logger.info("Successfully prepared world set: $worldName")
-                                    future.complete(true)
-                                } else {
-                                    plugin.logger.warning("Failed to move some world folders for: $worldName")
-                                    future.complete(false)
-                                }
-                            } catch (e: Exception) {
-                                plugin.logger.log(Level.SEVERE, "Error during world preparation: ${e.message}", e)
-                                future.complete(false)
-                            }
-                        })
-                    }, 100L) // Wait 5 seconds to make sure spawn chunks are generated
+                    // Start chunk pregeneration with Chunky for all three worlds
+                    pregenerateChunks(world, netherWorld, endWorld, worldName, netherName, endName, future)
 
                 } catch (e: Exception) {
                     plugin.logger.log(Level.SEVERE, "Error during world preparation: ${e.message}", e)
@@ -217,6 +178,129 @@ class WorldPreparationManager(private val plugin: ChallengePluginPlugin) {
 
             return null
         }
+    }
+
+    /**
+     * Pregenerates chunks for all three worlds using Chunky API.
+     */
+    private fun pregenerateChunks(
+        world: World,
+        netherWorld: World?,
+        endWorld: World?,
+        worldName: String,
+        netherName: String,
+        endName: String,
+        future: CompletableFuture<Boolean>
+    ) {
+        val chunkyAPI = Bukkit.getServicesManager().load(ChunkyAPI::class.java)
+        
+        if (chunkyAPI == null) {
+            plugin.logger.warning("Chunky API not available, skipping chunk pregeneration")
+            finalizeWorldPreparation(world, netherWorld, endWorld, worldName, netherName, endName, future)
+            return
+        }
+
+        plugin.logger.info("Starting chunk pregeneration for world set: $worldName")
+        
+        var completedWorlds = 0
+        val totalWorlds = 3
+        
+        val onWorldCompleted = {
+            completedWorlds++
+            if (completedWorlds >= totalWorlds) {
+                plugin.logger.info("Chunk pregeneration completed for all worlds in set: $worldName")
+                finalizeWorldPreparation(world, netherWorld, endWorld, worldName, netherName, endName, future)
+            }
+        }
+        
+        chunkyAPI.onGenerationComplete { event ->
+            when (event.world()) {
+                worldName, netherName, endName -> {
+                    plugin.logger.info("Chunk pregeneration completed for ${event.world()}")
+                    onWorldCompleted()
+                }
+            }
+        }
+        
+        // Start chunk generation for overworld (1000x1000 = 500 radius)
+        if (!chunkyAPI.startTask(worldName, "square", 0.0, 0.0, 500.0, 500.0, "concentric")) {
+            plugin.logger.warning("Failed to start chunk pregeneration for $worldName")
+        }
+        
+        // Start chunk generation for nether
+        if (netherWorld != null) {
+            if (!chunkyAPI.startTask(netherName, "square", 0.0, 0.0, 500.0, 500.0, "concentric")) {
+                plugin.logger.warning("Failed to start chunk pregeneration for $netherName")
+            }
+        } else {
+            plugin.logger.warning("Cannot prepare chunks for nether. Nether not found.")
+            onWorldCompleted()
+        }
+        
+        // Start chunk generation for end
+        if (endWorld != null) {
+            if (!chunkyAPI.startTask(endName, "square", 0.0, 0.0, 500.0, 500.0, "concentric")) {
+                plugin.logger.warning("Failed to start chunk pregeneration for $endName")
+            }
+        } else {
+            plugin.logger.warning("Cannot prepare chunks for the end. The end not found.")
+            onWorldCompleted()
+        }
+    }
+
+    /**
+     * Finalizes world preparation by unloading and moving worlds to prepared folder.
+     */
+    private fun finalizeWorldPreparation(
+        world: World,
+        netherWorld: World?,
+        endWorld: World?,
+        worldName: String,
+        netherName: String,
+        endName: String,
+        future: CompletableFuture<Boolean>
+    ) {
+        Bukkit.getScheduler().runTask(plugin, Runnable {
+            // Unload all the worlds
+            Bukkit.unloadWorld(world, true)
+            netherWorld?.let { Bukkit.unloadWorld(it, true) }
+            endWorld?.let { Bukkit.unloadWorld(it, true) }
+
+            // Now move these worlds to our preparation folder
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+                try {
+                    // Get server's world container (where worlds are saved)
+                    val serverWorldContainer = plugin.server.worldContainer
+
+                    // Create destination folders in our plugin's worlds folder
+                    val destMainFolder = File(worldsFolder, worldName)
+                    val destNetherFolder = File(worldsFolder, netherName)
+                    val destEndFolder = File(worldsFolder, endName)
+
+                    destMainFolder.mkdirs()
+                    destNetherFolder.mkdirs()
+                    destEndFolder.mkdirs()
+
+                    // Move worlds from server folder to our plugin's folder
+                    val sourceMainFolder = File(serverWorldContainer, worldName)
+                    val sourceNetherFolder = File(serverWorldContainer, netherName)
+                    val sourceEndFolder = File(serverWorldContainer, endName)
+
+                    if (moveWorldFolder(sourceMainFolder, destMainFolder) &&
+                        moveWorldFolder(sourceNetherFolder, destNetherFolder) &&
+                        moveWorldFolder(sourceEndFolder, destEndFolder)) {
+                        plugin.logger.info("Successfully prepared world set: $worldName")
+                        future.complete(true)
+                    } else {
+                        plugin.logger.warning("Failed to move some world folders for: $worldName")
+                        future.complete(false)
+                    }
+                } catch (e: Exception) {
+                    plugin.logger.log(Level.SEVERE, "Error during world preparation: ${e.message}", e)
+                    future.complete(false)
+                }
+            })
+        })
     }
 
     /**

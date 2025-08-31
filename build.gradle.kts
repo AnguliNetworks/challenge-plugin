@@ -16,6 +16,7 @@ repositories {
     maven("https://oss.sonatype.org/content/repositories/central")
     maven("https://jitpack.io")
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.codemc.io/repository/maven-public/")
     maven {
         name = "eldonexus"
         url = uri("https://eldonexus.de/repository/maven-releases/")
@@ -26,6 +27,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation("org.xerial:sqlite-jdbc:3.50.2.0")
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    compileOnly("org.popcraft:chunky-common:1.3.38")
     testImplementation(kotlin("test"))
     testImplementation("org.mockito:mockito-core:5.10.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
