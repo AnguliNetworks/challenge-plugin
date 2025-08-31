@@ -71,7 +71,7 @@ class PrepareWorldCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
                 } else {
                     player.sendMessage("${ChatColor.RED}Failed to generate world $currentNum/$total. Stopping generation.")
                     // Show current count after failure
-                    val currentCount = worldManager.countAvailableWorlds() / 3
+                    val currentCount = worldManager.countAvailableWorlds()
                     player.sendMessage("${ChatColor.GREEN}Currently have $currentCount pregenerated worlds available.")
                 }
             })

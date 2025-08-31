@@ -5,7 +5,7 @@
 - [x] The load method of joining a challenge is still broken. We have to make sure that the world is loaded before we teleport the player
 - [x] The levels of the last challenge the user was in gets also given in the lobby. It should only be given in the challenge world
 - [x] Once the player joins a challenge he has the correct food level but the saturation level is set to maximum. We should also save it and restore it
-- [] Limit how far the user can travel in the lobby world. Should be teleported back after 500 blocks or so
+- [x] Limit how far the user can travel in the lobby world. Should be teleported back after 500 blocks or so
 - [x] Customize Chat appearance. "Player: message". Operators should always be red, normal players gray. Players in the same challenge as you should be green.
 
 ## Later Features / Backlog
