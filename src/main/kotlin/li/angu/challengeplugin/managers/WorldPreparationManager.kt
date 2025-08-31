@@ -193,7 +193,7 @@ class WorldPreparationManager(private val plugin: ChallengePluginPlugin) {
         future: CompletableFuture<Boolean>
     ) {
         val chunkyAPI = Bukkit.getServicesManager().load(ChunkyAPI::class.java)
-        
+
         if (chunkyAPI == null) {
             plugin.logger.warning("Chunky API not available, skipping chunk pregeneration")
             finalizeWorldPreparation(world, netherWorld, endWorld, worldName, netherName, endName, future)
@@ -201,10 +201,10 @@ class WorldPreparationManager(private val plugin: ChallengePluginPlugin) {
         }
 
         plugin.logger.info("Starting chunk pregeneration for world set: $worldName")
-        
+
         var completedWorlds = 0
         val totalWorlds = 3
-        
+
         val onWorldCompleted = {
             completedWorlds++
             if (completedWorlds >= totalWorlds) {
@@ -212,7 +212,7 @@ class WorldPreparationManager(private val plugin: ChallengePluginPlugin) {
                 finalizeWorldPreparation(world, netherWorld, endWorld, worldName, netherName, endName, future)
             }
         }
-        
+
         chunkyAPI.onGenerationComplete { event ->
             when (event.world()) {
                 worldName, netherName, endName -> {
@@ -221,12 +221,12 @@ class WorldPreparationManager(private val plugin: ChallengePluginPlugin) {
                 }
             }
         }
-        
+
         // Start chunk generation for overworld (1000x1000 = 500 radius)
         if (!chunkyAPI.startTask(worldName, "square", 0.0, 0.0, 500.0, 500.0, "concentric")) {
             plugin.logger.warning("Failed to start chunk pregeneration for $worldName")
         }
-        
+
         // Start chunk generation for nether
         if (netherWorld != null) {
             if (!chunkyAPI.startTask(netherName, "square", 0.0, 0.0, 500.0, 500.0, "concentric")) {
@@ -236,7 +236,7 @@ class WorldPreparationManager(private val plugin: ChallengePluginPlugin) {
             plugin.logger.warning("Cannot prepare chunks for nether. Nether not found.")
             onWorldCompleted()
         }
-        
+
         // Start chunk generation for end
         if (endWorld != null) {
             if (!chunkyAPI.startTask(endName, "square", 0.0, 0.0, 500.0, 500.0, "concentric")) {

@@ -125,8 +125,8 @@ class LobbyManager(private val plugin: ChallengePluginPlugin) {
         player.exp = 0f
         player.health = 20.0
         player.foodLevel = 20
-        player.saturation = 20f
-        
+        player.saturation = 0f
+
         // Remove any active potion effects
         player.activePotionEffects.forEach { effect ->
             player.removePotionEffect(effect.type)
