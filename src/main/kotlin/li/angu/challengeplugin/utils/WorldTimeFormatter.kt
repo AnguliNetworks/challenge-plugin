@@ -42,8 +42,8 @@ object WorldTimeFormatter {
         // Determine color based on time of day
         val color = getTimeColor(normalizedTicks)
 
-        // Format: "8 am" or "3 pm"
-        return "$color$displayHour $amPm"
+        // Format: "8am" or "3pm"
+        return "$color$displayHour$amPm"
     }
 
     /**
