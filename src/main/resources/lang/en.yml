@@ -42,7 +42,7 @@ challenge:
   dragon_defeated_title: "§6Challenge Complete!"
   dragon_defeated_subtitle: "§eThe Ender Dragon has been defeated!"
   completed: "§aCongratulations! The challenge '§f%name%§a' has been completed!"
-  duration_display: "§e§l%time%"
+  duration_display: "§e§l%time% §f- %world_info%"
   reconnected: "§aWelcome back! Your inventory and location in challenge '§f%name%§a' have been restored."
   create_cancelled: "§cChallenge creation cancelled."
   create_failed: "§cFailed to create challenge world."

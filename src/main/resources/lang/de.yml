@@ -42,7 +42,7 @@ challenge:
   dragon_defeated_title: "§6Herausforderung Abgeschlossen!"
   dragon_defeated_subtitle: "§eDer Enderdrache wurde besiegt!"
   completed: "§aGlückwunsch! Die Herausforderung '§f%name%§a' wurde abgeschlossen!"
-  duration_display: "§e§l%time%"
+  duration_display: "§e§l%time% §f- %world_info%"
   reconnected: "§aWillkommen zurück! Dein Inventar und deine Position in der Herausforderung '§f%name%§a' wurden wiederhergestellt."
   create_cancelled: "§cErstellung der Herausforderung abgebrochen."
   create_failed: "§cErstellung der Herausforderungswelt fehlgeschlagen."

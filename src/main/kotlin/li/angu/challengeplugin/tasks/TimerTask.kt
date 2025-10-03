@@ -1,6 +1,7 @@
 package li.angu.challengeplugin.tasks
 
 import li.angu.challengeplugin.ChallengePluginPlugin
+import li.angu.challengeplugin.utils.WorldTimeFormatter
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
@@ -19,10 +20,13 @@ class TimerTask(private val plugin: ChallengePluginPlugin) : BukkitRunnable() {
             // Get the formatted duration for the challenge
             val formattedTime = challenge.getFormattedDuration()
 
+            // Get the world info (time for overworld, dimension name for nether/end)
+            val worldInfo = WorldTimeFormatter.getWorldInfo(player.world)
+
             // Send action bar message with localized text
             player.spigot().sendMessage(
                 ChatMessageType.ACTION_BAR,
-                TextComponent(plugin.languageManager.getMessage("challenge.duration_display", player, "time" to formattedTime))
+                TextComponent(plugin.languageManager.getMessage("challenge.duration_display", player, "time" to formattedTime, "world_info" to worldInfo))
             )
         }
     }
