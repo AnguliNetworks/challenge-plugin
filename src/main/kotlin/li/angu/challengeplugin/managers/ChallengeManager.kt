@@ -306,6 +306,9 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
 
             // Apply challenge settings to the world
             if (world != null) {
+                // Set world time to 0 for fresh start
+                world.time = 0
+
                 challenge.applySettingsToWorld(world)
 
                 // Also apply settings to nether and end worlds
