@@ -64,22 +64,33 @@ challenge:
     title: "§8Einstellungen: §9§l%name%"
     start: "§a§lHerausforderung starten"
     start_lore: "§7Klicke, um die Herausforderung mit diesen Einstellungen zu starten"
-    natural_regeneration: "§6Natürliche Regeneration"
-    sync_hearts: "§cSynchronisierte Herzen"
-    block_randomizer: "§dBlock Randomizer"
-    level_world_border: "§aLevel-Weltgrenze"
-    starter_kit: "§eStarterausrüstung"
+    natural_regeneration:
+      title: "§6Natürliche Regeneration"
+    sync_hearts:
+      title: "§cSynchronisierte Herzen"
+    block_randomizer:
+      title: "§dBlock Randomizer"
+    level_world_border:
+      title: "§aLevel-Weltgrenze"
     enabled: "§aAktiviert"
     disabled: "§cDeaktiviert"
     status: "§7Status: §f%status%"
     click_to_toggle: "§7Klicke zum Umschalten"
     click_to_cycle: "§7Klicke um zu wechseln"
-    kit:
+    starter_kit:
+      title: "§eStarterausrüstung"
       none: "§cKeine"
       basic: "§aEinfach"
       stone: "§aSteinausrüstung"
       iron: "§bEisenausrüstung"
       diamond: "§bDiamantausrüstung"
+    difficulty:
+      title: ""§eStarterausrüstung"
+      peaceful: "§fFriedlich"
+      easy: "§aEinfach"
+      normal: "§eNormal"
+      hard: "§6Schwer"
+      hardcore: "§4§lHardcore"
   menu:
     title: "§9§lHerausforderungen"
     create: "§a§lHerausforderung erstellen"

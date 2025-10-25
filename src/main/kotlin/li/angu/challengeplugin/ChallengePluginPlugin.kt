@@ -10,6 +10,7 @@ import li.angu.challengeplugin.managers.ChallengeMenuManager
 import li.angu.challengeplugin.managers.LobbyManager
 import li.angu.challengeplugin.managers.WorldPreparationManager
 import li.angu.challengeplugin.managers.ElytraManager
+import li.angu.challengeplugin.managers.BedSpawnManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.listeners.PlayerConnectionListener
 import li.angu.challengeplugin.listeners.PlayerHealthListener
@@ -19,6 +20,7 @@ import li.angu.challengeplugin.listeners.ExperienceBorderListener
 import li.angu.challengeplugin.listeners.LobbyProtectionListener
 import li.angu.challengeplugin.listeners.ServerListPingListener
 import li.angu.challengeplugin.listeners.ChatListener
+import li.angu.challengeplugin.listeners.BedSpawnListener
 import li.angu.challengeplugin.tasks.TimerTask
 import li.angu.challengeplugin.utils.LanguageManager
 
@@ -35,6 +37,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var blockDropListener: BlockDropListener
     open lateinit var worldPreparationManager: WorldPreparationManager
     open lateinit var experienceBorderListener: ExperienceBorderListener
+    open lateinit var bedSpawnManager: BedSpawnManager
 
     /**
      * Helper method to register a command with its executor and tab completer
@@ -65,6 +68,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         // Initialize managers
         languageManager = LanguageManager(this)
         playerDataManager = PlayerDataManager(this)
+        bedSpawnManager = BedSpawnManager(this)
         challengeManager = ChallengeManager(this)
         settingsInventoryManager = SettingsInventoryManager(this)
         challengeMenuManager = ChallengeMenuManager(this)
@@ -107,6 +111,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(LobbyProtectionListener(this), this)
         server.pluginManager.registerEvents(ServerListPingListener(this), this)
         server.pluginManager.registerEvents(ChatListener(this), this)
+        server.pluginManager.registerEvents(BedSpawnListener(this), this)
         server.pluginManager.registerEvents(elytraManager, this)
         blockDropListener = BlockDropListener(this)
         server.pluginManager.registerEvents(blockDropListener, this)

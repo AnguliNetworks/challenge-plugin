@@ -71,6 +71,21 @@ class SettingsInventoryManager(private val plugin: ChallengePluginPlugin) : List
             plugin
         ))
 
+        // Add Difficulty selection
+        settings.add(CycleSetting(
+            "difficulty",
+            li.angu.challengeplugin.models.Difficulty.HARDCORE,
+            li.angu.challengeplugin.models.Difficulty.values(),
+            mapOf(
+                li.angu.challengeplugin.models.Difficulty.PEACEFUL to Material.WHITE_WOOL,
+                li.angu.challengeplugin.models.Difficulty.EASY to Material.LIME_WOOL,
+                li.angu.challengeplugin.models.Difficulty.NORMAL to Material.YELLOW_WOOL,
+                li.angu.challengeplugin.models.Difficulty.HARD to Material.ORANGE_WOOL,
+                li.angu.challengeplugin.models.Difficulty.HARDCORE to Material.WITHER_SKELETON_SKULL
+            ),
+            plugin
+        ))
+
         // Add Starter Kit selection
         settings.add(CycleSetting(
             "starter_kit",
@@ -245,12 +260,21 @@ class SettingsInventoryManager(private val plugin: ChallengePluginPlugin) : List
                         settingSlotMap[slot] = setting
                     }
                     is CycleSetting<*> -> {
-                        if (setting.id == "starter_kit") {
-                            @Suppress("UNCHECKED_CAST")
-                            val cycleSetting = setting as CycleSetting<StarterKit>
-                            val item = cycleSetting.createItem(challenge.settings.starterKit, player)
-                            inventory.setItem(slot, item)
-                            settingSlotMap[slot] = setting
+                        when (setting.id) {
+                            "starter_kit" -> {
+                                @Suppress("UNCHECKED_CAST")
+                                val cycleSetting = setting as CycleSetting<StarterKit>
+                                val item = cycleSetting.createItem(challenge.settings.starterKit, player)
+                                inventory.setItem(slot, item)
+                                settingSlotMap[slot] = setting
+                            }
+                            "difficulty" -> {
+                                @Suppress("UNCHECKED_CAST")
+                                val cycleSetting = setting as CycleSetting<li.angu.challengeplugin.models.Difficulty>
+                                val item = cycleSetting.createItem(challenge.settings.difficulty, player)
+                                inventory.setItem(slot, item)
+                                settingSlotMap[slot] = setting
+                            }
                         }
                     }
                 }
@@ -352,13 +376,23 @@ class SettingsInventoryManager(private val plugin: ChallengePluginPlugin) : List
                 }
             }
             is CycleSetting<*> -> {
-                if (setting.id == "starter_kit") {
-                    @Suppress("UNCHECKED_CAST")
-                    val cycleSetting = setting as CycleSetting<StarterKit>
-                    challenge.settings.starterKit =
-                        cycleSetting.onClick(challenge.settings.starterKit) as StarterKit
-                    event.inventory.setItem(event.slot,
-                        cycleSetting.createItem(challenge.settings.starterKit, player))
+                when (setting.id) {
+                    "starter_kit" -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val cycleSetting = setting as CycleSetting<StarterKit>
+                        challenge.settings.starterKit =
+                            cycleSetting.onClick(challenge.settings.starterKit) as StarterKit
+                        event.inventory.setItem(event.slot,
+                            cycleSetting.createItem(challenge.settings.starterKit, player))
+                    }
+                    "difficulty" -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val cycleSetting = setting as CycleSetting<li.angu.challengeplugin.models.Difficulty>
+                        challenge.settings.difficulty =
+                            cycleSetting.onClick(challenge.settings.difficulty) as li.angu.challengeplugin.models.Difficulty
+                        event.inventory.setItem(event.slot,
+                            cycleSetting.createItem(challenge.settings.difficulty, player))
+                    }
                 }
             }
         }

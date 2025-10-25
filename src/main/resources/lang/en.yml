@@ -64,22 +64,33 @@ challenge:
     title: "§8Create §9§l%name% §8Challenge"
     start: "§a§lStart Challenge"
     start_lore: "§7Click to start the challenge with these settings"
-    natural_regeneration: "§6Natural Regeneration"
-    sync_hearts: "§cSync Hearts"
-    block_randomizer: "§dBlock Randomizer"
-    level_world_border: "§aLevel = WorldBorder"
-    starter_kit: "§eStarter Kit"
+    natural_regeneration:
+      title: "§6Natural Regeneration"
+    sync_hearts:
+      title: "§cSync Hearts"
+    block_randomizer:
+      title: "§dBlock Randomizer"
+    level_world_border:
+      title: "§aLevel = WorldBorder"
     enabled: "§aEnabled"
     disabled: "§cDisabled"
     status: "§7Status: §f%status%"
     click_to_toggle: "§7Click to toggle"
     click_to_cycle: "§7Click to cycle through options"
-    kit:
+    starter_kit:
+      title: "§eStarter Kit"
       none: "§cNone"
       basic: "§aBasic"
       stone: "§aStone Gear"
       iron: "§bIron Gear"
       diamond: "§bDiamond Gear"
+    difficulty:
+      title: "§eDifficulty"
+      peaceful: "§fPeaceful"
+      easy: "§aEasy"
+      normal: "§eNormal"
+      hard: "§6Hard"
+      hardcore: "§4§lHardcore"
   menu:
     title: "§9§lChallenges"
     create: "§a§lCreate Challenge"

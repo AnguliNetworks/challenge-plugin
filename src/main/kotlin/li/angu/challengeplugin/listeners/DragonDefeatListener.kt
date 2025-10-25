@@ -59,23 +59,69 @@ class DragonDefeatListener(private val plugin: ChallengePluginPlugin) : Listener
         // Find if player is in a challenge
         val challenge = plugin.challengeManager.getPlayerChallenge(player) ?: return
 
-        // In hardcore mode, store death location and set to spectator upon respawn
-        deathLocations[player.uniqueId] = player.location
-        player.sendMessage(plugin.languageManager.getMessage("challenge.died", player))
+        // Only apply hardcore death mechanics if challenge is in hardcore mode
+        if (challenge.settings.difficulty == li.angu.challengeplugin.models.Difficulty.HARDCORE) {
+            // In hardcore mode, store death location and set to spectator upon respawn
+            deathLocations[player.uniqueId] = player.location
+            player.sendMessage(plugin.languageManager.getMessage("challenge.died", player))
+        }
+        // For non-hardcore modes, let Minecraft handle respawning normally (bed/world spawn)
     }
 
     @EventHandler
     fun onPlayerRespawn(event: PlayerRespawnEvent) {
         val player = event.player
-        val deathLocation = deathLocations[player.uniqueId] ?: return
 
-        // Set respawn at death location
-        event.respawnLocation = deathLocation
+        // Check if player is in a challenge
+        val challenge = plugin.challengeManager.getPlayerChallenge(player)
+        if (challenge == null) {
+            // Not in a challenge, clean up if needed
+            deathLocations.remove(player.uniqueId)
+            return
+        }
 
-        // Set player to spectator mode
-        player.gameMode = GameMode.SPECTATOR
+        // Get the challenge's overworld
+        val challengeWorld = plugin.server.getWorld(challenge.worldName)
+        if (challengeWorld == null) {
+            plugin.logger.warning("Could not find challenge world ${challenge.worldName} for respawn")
+            deathLocations.remove(player.uniqueId)
+            return
+        }
 
-        // Remove from death locations map after handling
-        deathLocations.remove(player.uniqueId)
+        // Handle HARDCORE mode
+        if (challenge.settings.difficulty == li.angu.challengeplugin.models.Difficulty.HARDCORE) {
+            val deathLocation = deathLocations[player.uniqueId]
+            if (deathLocation != null) {
+                // Hardcore mode: respawn at death location and set to spectator
+                event.respawnLocation = deathLocation
+                player.gameMode = GameMode.SPECTATOR
+                deathLocations.remove(player.uniqueId)
+            }
+            return
+        }
+
+        // Handle NON-HARDCORE mode: respawn at bed or world spawn
+        deathLocations.remove(player.uniqueId) // Clean up death location if stored
+
+        // Try to get saved bed spawn location
+        val bedSpawn = plugin.bedSpawnManager.getBedSpawn(player.uniqueId, challenge.id)
+
+        if (bedSpawn != null) {
+            // Check if bed is still valid (not destroyed)
+            if (plugin.bedSpawnManager.isBedValid(bedSpawn)) {
+                // Bed exists, respawn there
+                event.respawnLocation = bedSpawn.add(0.5, 0.5, 0.5)
+                plugin.logger.fine("Respawning ${player.name} at bed location in ${bedSpawn.world?.name}")
+            } else {
+                // Bed was destroyed, delete from database and use world spawn
+                plugin.bedSpawnManager.deleteBedSpawn(player.uniqueId, challenge.id)
+                event.respawnLocation = challengeWorld.spawnLocation
+                plugin.logger.fine("Bed destroyed, respawning ${player.name} at world spawn")
+            }
+        } else {
+            // No bed spawn saved, use world spawn
+            event.respawnLocation = challengeWorld.spawnLocation
+            plugin.logger.fine("No bed spawn, respawning ${player.name} at world spawn")
+        }
     }
 }

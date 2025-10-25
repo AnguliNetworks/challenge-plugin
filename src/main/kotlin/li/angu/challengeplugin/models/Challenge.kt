@@ -31,7 +31,8 @@ data class ChallengeSettings(
     var blockRandomizer: Boolean = false,
     var starterKit: StarterKit = StarterKit.NONE,
     var levelWorldBorder: Boolean = false,
-    var borderSize: Double = 3.0 // Initial border size of 3 blocks
+    var borderSize: Double = 3.0, // Initial border size of 3 blocks
+    var difficulty: Difficulty = Difficulty.HARDCORE
 )
 
 class Challenge(
@@ -276,10 +277,23 @@ class Challenge(
     
     fun applySettingsToWorld(world: World) {
         world.setGameRule(GameRule.NATURAL_REGENERATION, settings.naturalRegeneration)
-        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
+
+        // Only enable immediate respawn for hardcore mode (so spectator mode is applied instantly)
+        // For non-hardcore modes, use normal respawn screen (Minecraft default)
+        val immediateRespawn = settings.difficulty == Difficulty.HARDCORE
+        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, immediateRespawn)
+
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
-        world.difficulty = org.bukkit.Difficulty.HARD
-        
+
+        // Set world difficulty based on challenge difficulty setting
+        world.difficulty = when (settings.difficulty) {
+            Difficulty.PEACEFUL -> org.bukkit.Difficulty.PEACEFUL
+            Difficulty.EASY -> org.bukkit.Difficulty.EASY
+            Difficulty.NORMAL -> org.bukkit.Difficulty.NORMAL
+            Difficulty.HARD -> org.bukkit.Difficulty.HARD
+            Difficulty.HARDCORE -> org.bukkit.Difficulty.HARD // Hardcore uses hard difficulty + death penalty
+        }
+
         // For levelWorldBorder:
         // We don't modify the world's border directly anymore
         // Instead, individual player borders are managed by the ExperienceBorderListener

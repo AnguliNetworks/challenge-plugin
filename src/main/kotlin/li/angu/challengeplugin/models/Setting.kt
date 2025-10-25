@@ -17,7 +17,7 @@ abstract class Setting<T>(
      * Get the display name for this setting.
      */
     fun getName(player: Player): String {
-        return plugin.languageManager.getMessage("challenge.settings.$id", player)
+        return plugin.languageManager.getMessage("challenge.settings.$id.title", player)
     }
 
     /**
@@ -88,7 +88,7 @@ class CycleSetting<T : Enum<T>>(
         meta.lore = listOf(
             plugin.languageManager.getMessage(
                 "challenge.settings.status", player, "status" to
-                    plugin.languageManager.getMessage("challenge.settings.kit.${value.toString().lowercase()}", player)
+                    plugin.languageManager.getMessage("challenge.settings.$id.${value.toString().lowercase()}", player)
             ),
             plugin.languageManager.getMessage("challenge.settings.click_to_cycle", player)
         )

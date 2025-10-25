@@ -77,6 +77,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
 
                         // Load settings
                         val starterKitName = rs.getString("starter_kit") ?: "NONE"
+                        val difficultyName = rs.getString("difficulty") ?: "HARDCORE"
                         val settings = ChallengeSettings(
                             naturalRegeneration = rs.getBoolean("natural_regeneration"),
                             syncHearts = rs.getBoolean("sync_hearts"),
@@ -87,7 +88,12 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                                 li.angu.challengeplugin.models.StarterKit.NONE
                             },
                             levelWorldBorder = rs.getBoolean("level_world_border"),
-                            borderSize = rs.getDouble("border_size")
+                            borderSize = rs.getDouble("border_size"),
+                            difficulty = try {
+                                li.angu.challengeplugin.models.Difficulty.valueOf(difficultyName)
+                            } catch (e: IllegalArgumentException) {
+                                li.angu.challengeplugin.models.Difficulty.HARDCORE
+                            }
                         )
 
                         val challenge = Challenge(
@@ -232,16 +238,16 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val settingsExist = challengeSettingsExistInDatabase(challenge.id)
         val settingsQuery = if (settingsExist) {
             """
-            UPDATE challenge_settings SET 
-            natural_regeneration = ?, sync_hearts = ?, block_randomizer = ?, 
-            level_world_border = ?, starter_kit = ?, border_size = ?
+            UPDATE challenge_settings SET
+            natural_regeneration = ?, sync_hearts = ?, block_randomizer = ?,
+            level_world_border = ?, starter_kit = ?, border_size = ?, difficulty = ?
             WHERE challenge_id = ?
             """.trimIndent()
         } else {
             """
-            INSERT INTO challenge_settings 
-            (natural_regeneration, sync_hearts, block_randomizer, level_world_border, starter_kit, border_size, challenge_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO challenge_settings
+            (natural_regeneration, sync_hearts, block_randomizer, level_world_border, starter_kit, border_size, difficulty, challenge_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent()
         }
 
@@ -252,6 +258,7 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             challenge.settings.levelWorldBorder,
             challenge.settings.starterKit.name,
             challenge.settings.borderSize,
+            challenge.settings.difficulty.name,
             challenge.id.toString()
         ))
 
