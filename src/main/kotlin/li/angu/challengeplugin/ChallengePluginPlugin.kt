@@ -11,6 +11,7 @@ import li.angu.challengeplugin.managers.LobbyManager
 import li.angu.challengeplugin.managers.WorldPreparationManager
 import li.angu.challengeplugin.managers.ElytraManager
 import li.angu.challengeplugin.managers.BedSpawnManager
+import li.angu.challengeplugin.managers.NPCManager
 import li.angu.challengeplugin.listeners.DragonDefeatListener
 import li.angu.challengeplugin.listeners.PlayerConnectionListener
 import li.angu.challengeplugin.listeners.PlayerHealthListener
@@ -21,6 +22,7 @@ import li.angu.challengeplugin.listeners.LobbyProtectionListener
 import li.angu.challengeplugin.listeners.ServerListPingListener
 import li.angu.challengeplugin.listeners.ChatListener
 import li.angu.challengeplugin.listeners.BedSpawnListener
+import li.angu.challengeplugin.listeners.NPCListener
 import li.angu.challengeplugin.tasks.TimerTask
 import li.angu.challengeplugin.utils.LanguageManager
 
@@ -38,6 +40,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
     open lateinit var worldPreparationManager: WorldPreparationManager
     open lateinit var experienceBorderListener: ExperienceBorderListener
     open lateinit var bedSpawnManager: BedSpawnManager
+    open lateinit var npcManager: NPCManager
 
     /**
      * Helper method to register a command with its executor and tab completer
@@ -79,6 +82,10 @@ open class ChallengePluginPlugin : JavaPlugin() {
         lobbyManager.initialize()
         elytraManager = ElytraManager(this)
 
+        // Initialize NPC manager and load NPCs from database
+        npcManager = NPCManager(this)
+        npcManager.loadNPCs()
+
         // Register commands
         // Main challenge commands
         registerCommand("create", CreateCommand(this))
@@ -98,6 +105,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         // Other commands
         registerCommand("lang", LanguageCommand(this))
         registerCommand("pause", PauseCommand(this))
+        registerCommand("npc", NPCCommand(this))
         registerCommand("debugdragon", DebugDragonCommand(this))
         registerCommand("debugcolors", DebugColorsCommand(this))
         registerCommand("debugrespawn", DebugRespawnCommand(this))
@@ -112,6 +120,7 @@ open class ChallengePluginPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(ServerListPingListener(this), this)
         server.pluginManager.registerEvents(ChatListener(this), this)
         server.pluginManager.registerEvents(BedSpawnListener(this), this)
+        server.pluginManager.registerEvents(NPCListener(this), this)
         server.pluginManager.registerEvents(elytraManager, this)
         blockDropListener = BlockDropListener(this)
         server.pluginManager.registerEvents(blockDropListener, this)

@@ -128,6 +128,18 @@ player_status:
 chat:
   format: "%player%: %message%"
 
+npc:
+  created: "§aNPC für Herausforderung '%name%' erstellt (ID: %npc_id%)"
+  deleted: "§aNPC erfolgreich gelöscht"
+  not_found: "§cNPC nicht gefunden mit ID: %id%"
+  not_found_entity: "§cNPC-Entitydaten nicht gefunden"
+  challenge_not_found: "§cHerausforderung nicht gefunden: %id%"
+  already_in_challenge: "§cDu musst zuerst deine aktuelle Herausforderung verlassen!"
+  joined_via_npc: "§aHerausforderung '%name%' über NPC beigetreten"
+  not_in_lobby: "§cDu kannst NPCs nur in der Lobby verwenden!"
+  create_failed: "§cFehler beim Erstellen des NPCs"
+  invalid_id: "§cUngültiges NPC-ID-Format"
+
 command:
   player_only: "§cDieser Befehl kann nur von Spielern verwendet werden"
   pause:
@@ -147,6 +159,9 @@ command:
     create: "§cVerwendung: /create <name>"
     join: "§cVerwendung: /join <id>"
     delete: "§cVerwendung: /delete <id>"
+    npc: "§cVerwendung: /npc <create|delete> <id>"
+    npc_create: "§cVerwendung: /npc create <challenge_id>"
+    npc_delete: "§cVerwendung: /npc delete <npc_id>"
   help:
     title: "§6Herausforderungs-Plugin Befehle:"
     create: "§7/create <name> §f- Erstelle eine neue Herausforderung"

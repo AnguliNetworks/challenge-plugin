@@ -378,6 +378,9 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         val netherWorldName = "${mainWorldName}_nether"
         val endWorldName = "${mainWorldName}_the_end"
 
+        // Delete any NPCs associated with this challenge
+        plugin.npcManager.deleteNPCsForChallenge(challengeId)
+
         // Unload worlds if they're loaded
         unloadWorld(mainWorldName)
         unloadWorld(netherWorldName)

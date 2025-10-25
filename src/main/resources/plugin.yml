@@ -60,6 +60,10 @@ commands:
   pause:
     description: Pause or resume the current challenge
     usage: /pause [resume]
+  npc:
+    description: Create and manage challenge NPCs
+    usage: /npc <create|delete> <id>
+    permission: challengeplugin.npc
 permissions:
   challengeplugin.debug:
     description: Access to debug commands
@@ -72,4 +76,7 @@ permissions:
     default: op
   challengeplugin.admin:
     description: Permission for administrative commands
+    default: op
+  challengeplugin.npc:
+    description: Permission to create and manage challenge NPCs
     default: op

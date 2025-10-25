@@ -128,6 +128,18 @@ player_status:
 chat:
   format: "%player%: %message%"
 
+npc:
+  created: "§aNPC created for challenge '%name%' (ID: %npc_id%)"
+  deleted: "§aNPC deleted successfully"
+  not_found: "§cNPC not found with ID: %id%"
+  not_found_entity: "§cNPC entity data not found"
+  challenge_not_found: "§cChallenge not found: %id%"
+  already_in_challenge: "§cYou must leave your current challenge first!"
+  joined_via_npc: "§aJoined challenge '%name%' via NPC"
+  not_in_lobby: "§cYou can only use NPCs in the lobby!"
+  create_failed: "§cFailed to create NPC"
+  invalid_id: "§cInvalid NPC ID format"
+
 command:
   player_only: "§cThis command can only be used by players"
   pause:
@@ -155,6 +167,9 @@ command:
     create: "§cUsage: /create <name>"
     join: "§cUsage: /join <id>"
     delete: "§cUsage: /delete <id>"
+    npc: "§cUsage: /npc <create|delete> <id>"
+    npc_create: "§cUsage: /npc create <challenge_id>"
+    npc_delete: "§cUsage: /npc delete <npc_id>"
   help:
     title: "§6Challenge Plugin Commands:"
     create: "§7/create <name> §f- Create a new challenge"

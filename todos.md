@@ -1,6 +1,9 @@
 # Todos
 - [x] Challenge Creation hardcore difficulty should be default
-- [] Respawn Listener hardcore path with extra return
+- [x] Respawn Listener hardcore path with extra return
+- [] NPC remove command with auto completion
+- [] NPC list command
+- [] NPC command only for admins
 
 ## Later Features / Backlog
 
