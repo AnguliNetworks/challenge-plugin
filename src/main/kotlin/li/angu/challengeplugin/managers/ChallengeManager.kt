@@ -597,10 +597,23 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
     /**
      * Restarts a challenge by resetting its status to ACTIVE.
      * This allows players to join the challenge again.
-     * Returns true if successful, false otherwise.
+     * Returns true if successful, false if DB update failed, null if challenge not found.
      */
-    fun restartChallenge(challengeId: UUID): Boolean {
-        val challenge = activeChallenges[challengeId] ?: return false
+    fun restartChallenge(challengeId: UUID): Boolean? {
+        // Try to get from memory first
+        var challenge = activeChallenges[challengeId]
+
+        // If not in memory, try to load from database
+        if (challenge == null) {
+            val loaded = loadChallengeFromDatabase(challengeId)
+            if (loaded != null) {
+                activeChallenges[challengeId] = loaded
+                challenge = loaded
+            } else {
+                // Challenge doesn't exist
+                return null
+            }
+        }
 
         // Reset challenge status to ACTIVE
         challenge.status = ChallengeStatus.ACTIVE
@@ -608,6 +621,74 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
 
         // Save updated status to database
         return saveChallengeToDatabase(challenge)
+    }
+
+    /**
+     * Loads a single challenge from the database by ID
+     */
+    private fun loadChallengeFromDatabase(challengeId: UUID): Challenge? {
+        return try {
+            val challengeQuery = """
+                SELECT c.id, c.name, c.world_name, c.creator_uuid, c.status, c.created_at, c.started_at,
+                       c.completed_at, c.paused_at, c.last_empty_timestamp, c.total_paused_duration,
+                       cs.natural_regeneration, cs.sync_hearts, cs.block_randomizer,
+                       cs.level_world_border, cs.starter_kit, cs.border_size, cs.difficulty
+                FROM challenges c
+                LEFT JOIN challenge_settings cs ON c.id = cs.challenge_id
+                WHERE c.id = ?
+            """.trimIndent()
+
+            plugin.databaseDriver.executeQuery(challengeQuery, challengeId.toString()) { rs ->
+                if (rs.next()) {
+                    val starterKitName = rs.getString("starter_kit") ?: "NONE"
+                    val difficultyName = rs.getString("difficulty") ?: "HARDCORE"
+                    val settings = ChallengeSettings(
+                        naturalRegeneration = rs.getBoolean("natural_regeneration"),
+                        syncHearts = rs.getBoolean("sync_hearts"),
+                        blockRandomizer = rs.getBoolean("block_randomizer"),
+                        starterKit = try {
+                            li.angu.challengeplugin.models.StarterKit.valueOf(starterKitName)
+                        } catch (e: IllegalArgumentException) {
+                            li.angu.challengeplugin.models.StarterKit.NONE
+                        },
+                        levelWorldBorder = rs.getBoolean("level_world_border"),
+                        borderSize = rs.getDouble("border_size"),
+                        difficulty = try {
+                            li.angu.challengeplugin.models.Difficulty.valueOf(difficultyName)
+                        } catch (e: IllegalArgumentException) {
+                            li.angu.challengeplugin.models.Difficulty.HARDCORE
+                        }
+                    )
+
+                    val challenge = Challenge(
+                        id = UUID.fromString(rs.getString("id")),
+                        name = rs.getString("name"),
+                        worldName = rs.getString("world_name") ?: "world_${challengeId}",
+                        creatorUuid = UUID.fromString(rs.getString("creator_uuid")),
+                        createdAt = rs.getTimestamp("created_at")?.toInstant() ?: Instant.now(),
+                        status = ChallengeStatus.valueOf(rs.getString("status") ?: "ACTIVE"),
+                        players = mutableSetOf(),
+                        settings = settings
+                    )
+
+                    // Load timestamps
+                    rs.getTimestamp("started_at")?.let { challenge.startedAt = it.toInstant() }
+                    rs.getTimestamp("completed_at")?.let { challenge.completedAt = it.toInstant() }
+                    rs.getTimestamp("paused_at")?.let { challenge.pausedAt = it.toInstant() }
+                    rs.getTimestamp("last_empty_timestamp")?.let { challenge.lastEmptyTimestamp = it.toInstant() }
+
+                    val pausedDurationSeconds = rs.getLong("total_paused_duration")
+                    challenge.totalPausedDuration = Duration.ofSeconds(pausedDurationSeconds)
+
+                    challenge
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            plugin.logger.warning("Failed to load challenge ${challengeId} from database: ${e.message}")
+            null
+        }
     }
 
     private fun createHardcoreWorld(worldName: String, challenge: Challenge? = null): World? {

@@ -27,25 +27,30 @@ class DebugRestartCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
             return true
         }
 
-        // Get the challenge
-        val challenge = plugin.challengeManager.getChallenge(challengeId)
-        if (challenge == null) {
-            player.sendMessage(plugin.languageManager.getMessage("challenge.not_found", player))
-            return true
-        }
+        // Restart the challenge (this will load from DB if not in memory)
+        val result = plugin.challengeManager.restartChallenge(challengeId)
 
-        // Restart the challenge
-        if (plugin.challengeManager.restartChallenge(challengeId)) {
-            player.sendMessage(
-                plugin.languageManager.getMessage(
-                    "command.debug.restart_success",
-                    player,
-                    "name" to challenge.name,
-                    "id" to challengeId.toString()
+        when {
+            result == null -> {
+                player.sendMessage(plugin.languageManager.getMessage("challenge.not_found", player))
+            }
+            result -> {
+                // Get the challenge name for the success message
+                val challenge = plugin.challengeManager.getChallenge(challengeId)
+                val challengeName = challenge?.name ?: challengeId.toString()
+
+                player.sendMessage(
+                    plugin.languageManager.getMessage(
+                        "command.debug.restart_success",
+                        player,
+                        "name" to challengeName,
+                        "id" to challengeId.toString()
+                    )
                 )
-            )
-        } else {
-            player.sendMessage(plugin.languageManager.getMessage("command.debug.restart_failed", player))
+            }
+            else -> {
+                player.sendMessage(plugin.languageManager.getMessage("command.debug.restart_failed", player))
+            }
         }
 
         return true
