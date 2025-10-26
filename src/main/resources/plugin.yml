@@ -53,6 +53,10 @@ commands:
     description: Teleport to a specific world's spawn point
     usage: /debugspawn <world_name>
     permission: challengeplugin.debug
+  debugrestart:
+    description: Restart a challenge by resetting its status to ACTIVE
+    usage: /debugrestart <challenge_id>
+    permission: challengeplugin.debug
   prepare:
     description: Pre-generate worlds for challenges or show available pre-generated worlds
     usage: /prepare [count] [max]

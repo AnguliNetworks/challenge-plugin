@@ -163,6 +163,9 @@ command:
     no_challenge: "§cYou need to be in a challenge to use this command."
     no_end_world: "§cCouldn't find the End world for this challenge."
     no_dragon: "§cCouldn't find the Ender Dragon in the End world."
+    restart_usage: "§cUsage: /debugrestart <challenge_id>"
+    restart_success: "§aChallenge '§f%name%§a' has been restarted! Status set to ACTIVE. Players can now join again."
+    restart_failed: "§cFailed to restart the challenge. Please check the logs."
   usage:
     create: "§cUsage: /create <name>"
     join: "§cUsage: /join <id>"

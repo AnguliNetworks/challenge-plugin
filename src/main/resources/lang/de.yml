@@ -155,6 +155,9 @@ command:
     no_challenge: "§cDu musst in einer Herausforderung sein, um diesen Befehl zu verwenden."
     no_end_world: "§cKonnte die End-Welt für diese Herausforderung nicht finden."
     no_dragon: "§cKonnte den Enderdrachen in der End-Welt nicht finden."
+    restart_usage: "§cVerwendung: /debugrestart <challenge_id>"
+    restart_success: "§aHerausforderung '§f%name%§a' wurde neu gestartet! Status auf AKTIV gesetzt. Spieler können jetzt wieder beitreten."
+    restart_failed: "§cFehler beim Neustarten der Herausforderung. Bitte überprüfe die Logs."
   usage:
     create: "§cVerwendung: /create <name>"
     join: "§cVerwendung: /join <id>"

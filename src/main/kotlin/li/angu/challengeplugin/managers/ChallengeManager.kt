@@ -594,6 +594,22 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
         }
     }
 
+    /**
+     * Restarts a challenge by resetting its status to ACTIVE.
+     * This allows players to join the challenge again.
+     * Returns true if successful, false otherwise.
+     */
+    fun restartChallenge(challengeId: UUID): Boolean {
+        val challenge = activeChallenges[challengeId] ?: return false
+
+        // Reset challenge status to ACTIVE
+        challenge.status = ChallengeStatus.ACTIVE
+        challenge.completedAt = null
+
+        // Save updated status to database
+        return saveChallengeToDatabase(challenge)
+    }
+
     private fun createHardcoreWorld(worldName: String, challenge: Challenge? = null): World? {
         // Create overworld
         val creator = WorldCreator(worldName)
