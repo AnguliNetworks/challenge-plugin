@@ -62,10 +62,10 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
             plugin.logger.info("Loading saved challenges from database...")
             // Load all challenges from database
             val challengeQuery = """
-                SELECT c.id, c.name, c.world_name, c.creator_uuid, c.status, c.created_at, c.started_at, 
+                SELECT c.id, c.name, c.world_name, c.creator_uuid, c.status, c.created_at, c.started_at,
                        c.completed_at, c.paused_at, c.last_empty_timestamp, c.total_paused_duration,
-                       cs.natural_regeneration, cs.sync_hearts, cs.block_randomizer, 
-                       cs.level_world_border, cs.starter_kit, cs.border_size
+                       cs.natural_regeneration, cs.sync_hearts, cs.block_randomizer,
+                       cs.level_world_border, cs.starter_kit, cs.border_size, cs.difficulty
                 FROM challenges c
                 LEFT JOIN challenge_settings cs ON c.id = cs.challenge_id
             """.trimIndent()

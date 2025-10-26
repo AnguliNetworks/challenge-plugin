@@ -26,10 +26,12 @@ class JoinCommand(plugin: ChallengePluginPlugin) : BaseCommand(plugin) {
             return true
         }
 
+        /*
         if (challenge.status != ChallengeStatus.ACTIVE) {
             player.sendMessage(plugin.languageManager.getMessage("challenge.already_completed", player))
             return true
         }
+         */
 
         if (plugin.challengeManager.joinChallenge(player, challenge)) {
             player.sendMessage(plugin.languageManager.getMessage("challenge.joined", player, "name" to challenge.name))
