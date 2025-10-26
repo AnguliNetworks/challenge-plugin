@@ -600,33 +600,51 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
      * Returns true if successful, false if DB update failed, null if challenge not found.
      */
     fun restartChallenge(challengeId: UUID): Boolean? {
+        plugin.logger.info("[DEBUG] restartChallenge called for ID: $challengeId")
+
         // Try to get from memory first
         var challenge = activeChallenges[challengeId]
+        plugin.logger.info("[DEBUG] Challenge in memory: ${challenge != null}")
+
+        if (challenge != null) {
+            plugin.logger.info("[DEBUG] Found in memory - Name: ${challenge.name}, Status: ${challenge.status}")
+        }
 
         // If not in memory, try to load from database
         if (challenge == null) {
+            plugin.logger.info("[DEBUG] Not in memory, attempting to load from database...")
             val loaded = loadChallengeFromDatabase(challengeId)
+            plugin.logger.info("[DEBUG] Database load result: ${loaded != null}")
+
             if (loaded != null) {
+                plugin.logger.info("[DEBUG] Loaded from DB - Name: ${loaded.name}, Status: ${loaded.status}")
                 activeChallenges[challengeId] = loaded
                 challenge = loaded
+                plugin.logger.info("[DEBUG] Added to activeChallenges map")
             } else {
                 // Challenge doesn't exist
+                plugin.logger.warning("[DEBUG] Challenge $challengeId not found in database!")
                 return null
             }
         }
 
         // Reset challenge status to ACTIVE
+        val oldStatus = challenge.status
         challenge.status = ChallengeStatus.ACTIVE
         challenge.completedAt = null
+        plugin.logger.info("[DEBUG] Changed status from $oldStatus to ACTIVE, cleared completedAt")
 
         // Save updated status to database
-        return saveChallengeToDatabase(challenge)
+        val saveResult = saveChallengeToDatabase(challenge)
+        plugin.logger.info("[DEBUG] Database save result: $saveResult")
+        return saveResult
     }
 
     /**
      * Loads a single challenge from the database by ID
      */
     private fun loadChallengeFromDatabase(challengeId: UUID): Challenge? {
+        plugin.logger.info("[DEBUG] loadChallengeFromDatabase: Starting load for $challengeId")
         return try {
             val challengeQuery = """
                 SELECT c.id, c.name, c.world_name, c.creator_uuid, c.status, c.created_at, c.started_at,
@@ -638,8 +656,11 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                 WHERE c.id = ?
             """.trimIndent()
 
-            plugin.databaseDriver.executeQuery(challengeQuery, challengeId.toString()) { rs ->
+            plugin.logger.info("[DEBUG] loadChallengeFromDatabase: Executing query with ID: ${challengeId.toString()}")
+            val result = plugin.databaseDriver.executeQuery(challengeQuery, challengeId.toString(), processor = { rs ->
+                plugin.logger.info("[DEBUG] loadChallengeFromDatabase: Processor lambda called")
                 if (rs.next()) {
+                    plugin.logger.info("[DEBUG] loadChallengeFromDatabase: ResultSet has next() = true")
                     val starterKitName = rs.getString("starter_kit") ?: "NONE"
                     val difficultyName = rs.getString("difficulty") ?: "HARDCORE"
                     val settings = ChallengeSettings(
@@ -660,13 +681,17 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                         }
                     )
 
+                    val challengeName = rs.getString("name")
+                    val challengeStatus = rs.getString("status")
+                    plugin.logger.info("[DEBUG] loadChallengeFromDatabase: Building Challenge object - Name: $challengeName, Status: $challengeStatus")
+
                     val challenge = Challenge(
                         id = UUID.fromString(rs.getString("id")),
-                        name = rs.getString("name"),
+                        name = challengeName,
                         worldName = rs.getString("world_name") ?: "world_${challengeId}",
                         creatorUuid = UUID.fromString(rs.getString("creator_uuid")),
                         createdAt = rs.getTimestamp("created_at")?.toInstant() ?: Instant.now(),
-                        status = ChallengeStatus.valueOf(rs.getString("status") ?: "ACTIVE"),
+                        status = ChallengeStatus.valueOf(challengeStatus ?: "ACTIVE"),
                         players = mutableSetOf(),
                         settings = settings
                     )
@@ -680,13 +705,18 @@ class ChallengeManager(private val plugin: ChallengePluginPlugin) {
                     val pausedDurationSeconds = rs.getLong("total_paused_duration")
                     challenge.totalPausedDuration = Duration.ofSeconds(pausedDurationSeconds)
 
+                    plugin.logger.info("[DEBUG] loadChallengeFromDatabase: Challenge object created successfully")
                     challenge
                 } else {
+                    plugin.logger.warning("[DEBUG] loadChallengeFromDatabase: ResultSet has next() = false, no rows returned")
                     null
                 }
-            }
+            })
+            plugin.logger.info("[DEBUG] loadChallengeFromDatabase: Query completed, result = $result")
+            result
         } catch (e: Exception) {
-            plugin.logger.warning("Failed to load challenge ${challengeId} from database: ${e.message}")
+            plugin.logger.warning("[DEBUG] loadChallengeFromDatabase: Exception caught - ${e::class.simpleName}: ${e.message}")
+            e.printStackTrace()
             null
         }
     }
